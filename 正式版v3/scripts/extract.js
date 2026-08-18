@@ -1,0 +1,1 @@
+const fs = require('fs'); const code = fs.readFileSync('../js/data/surgery.js', 'utf8'); const match = code.match(/const surgeryDiseases = (\[[\s\S]*?\]);\s*if/); if (match) { const list = eval(match[1]); console.log(list.map(d => d.name).join('\n')); } else { console.log('no match'); }

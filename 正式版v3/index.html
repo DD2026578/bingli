@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>外科宝宝病历巴士</title>
+<!-- 引入全局样式解耦文件 -->
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="header">
+<div class="header-inner">
+<div class="header-logo" title="外科宝宝病历巴士">
+<svg class="snake-staff-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<linearGradient id="staffGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+<stop offset="0%" stop-color="#FEF08A"/>
+<stop offset="50%" stop-color="#F59E0B"/>
+<stop offset="100%" stop-color="#D97706"/>
+</linearGradient>
+<linearGradient id="snakeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+<stop offset="0%" stop-color="#A7F3D0"/>
+<stop offset="50%" stop-color="#10B981"/>
+<stop offset="100%" stop-color="#047857"/>
+</linearGradient>
+<radialGradient id="glowGrad" cx="50%" cy="50%" r="50%">
+<stop offset="0%" stop-color="#67E8F9" stop-opacity="0.9"/>
+<stop offset="100%" stop-color="#06B6D4" stop-opacity="0"/>
+</radialGradient>
+<filter id="glowEffect" x="-30%" y="-30%" width="160%" height="160%">
+<feGaussianBlur stdDeviation="1.5" result="blur"/>
+<feComposite in="SourceGraphic" in2="blur" operator="over"/>
+</filter>
+</defs>
+<circle cx="32" cy="12" r="9" fill="url(#glowGrad)" class="pulse-glow"/>
+<circle cx="32" cy="12" r="4.5" fill="url(#staffGrad)" filter="url(#glowEffect)"/>
+<rect x="30.5" y="14" width="3" height="43" rx="1.5" fill="url(#staffGrad)"/>
+<path d="M28 55H36L34 58H30L28 55Z" fill="url(#staffGrad)"/>
+<path d="M27 16H37V18H27V16Z" fill="url(#staffGrad)"/>
+<path d="M 27 50 C 20 44, 21 38, 32 34 C 43 30, 43 23, 32 20 C 23 17, 24 13, 32 13" stroke="#064E3B" stroke-width="4.5" stroke-linecap="round" fill="none" opacity="0.35"/>
+<path d="M 27 50 C 20 44, 21 38, 32 34 C 43 30, 43 23, 32 20 C 23 17, 24 13, 32 13" stroke="url(#snakeGrad)" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+<path class="snake-flow" d="M 27 50 C 20 44, 21 38, 32 34 C 43 30, 43 23, 32 20 C 23 17, 24 13, 32 13" stroke="#ECFDF5" stroke-width="1.6" stroke-linecap="round" fill="none" stroke-dasharray="6 10"/>
+<g>
+<path d="M32 13 C33.5 11.2, 36.5 11, 37.5 12.8 C38.5 14.5, 36.8 16.5, 34 16.8 Z" fill="url(#snakeGrad)"/>
+<circle cx="35.5" cy="13.2" r="0.8" fill="#FEF08A"/>
+<path class="snake-tongue" d="M37.2 12.5 L39.5 11.5 M39.5 11.5 L41 11 M39.5 11.5 L41 12.5" stroke="#EF4444" stroke-width="0.8" stroke-linecap="round"/>
+</g>
+</svg>
+</div>
+<div class="header-text">
+<h1>外科宝宝病历巴士</h1>
+<p>完整入院记录 · 首次病程 · 日常病程 · 出院记录 · 临床路径 · 临床计算器 · AI智能分析</p>
+</div>
+<div class="header-badge">
+<button id="themeToggleBtn" class="theme-toggle-btn" onclick="toggleTheme()" title="点击切换主题：白昼清爽 → 宝宝粉 → 护眼绿 → 护眼夜间">
+<span id="themeBtnLabel">☀️ 白昼清爽</span>
+</button>
+<span class="badge" id="totalDiseaseBadge">多科室模板已加载</span>
+<span class="badge" id="totalCpBadge">临床路径支持</span>
+</div>
+</div>
+</div>
+
+<div class="main-container">
+<!-- 左侧面板 -->
+<div class="left-panel">
+<div class="card"><div class="card-header">📋 选择科室</div><div class="card-body"><div class="dept-list" id="deptList"></div></div></div>
+<div class="card"><div class="card-header">🩺 选择疾病</div><div class="card-body">
+<input type="text" class="search-box" placeholder="🔍 搜索疾病名称/拼音首字母/ICD编码..." oninput="searchDisease(this.value)">
+<div class="disease-list" id="diseaseList"></div>
+<div class="stat-box"><span class="stat" id="statBox">加载中...</span></div>
+</div></div>
+</div>
+
+<!-- 右侧主控制区域 -->
+<div class="right-panel">
+<div class="toolbar">
+<button class="btn btn-outline" onclick="toggleAutoPE()">⚙️ 自动填充正常体检</button>
+<button class="btn btn-outline" onclick="fillNormalVitals()">❤️ 填正常体征</button>
+<span id="autoSaveStatus" style="font-size:12px;color:var(--c-text-muted);margin-left:auto;align-self:center;font-weight:500"></span>
+</div>
+<div class="hint">💡 <strong>使用指南：</strong>① 左侧选科室 → 选疾病（支持拼音缩写智能搜索），点击疾病即自动填充五大文书 ② 自由编辑病历内容 ③ 切换 Tab 栏至 <b>临床计算器</b> 或 <b>AI对话</b></div>
+
+<!-- Tab切换栏 -->
+<div class="record-tabs">
+<button class="tab-btn active" onclick="switchTab('admission')">🏥 入院记录</button>
+<button class="tab-btn" onclick="switchTab('firstCourse')">📝 首次病程记录</button>
+<button class="tab-btn" onclick="switchTab('dailyCourse')">📅 日常病程记录</button>
+<button class="tab-btn" onclick="switchTab('discharge')">📤 出院记录</button>
+<button class="tab-btn" onclick="switchTab('pathway')">📊 临床路径</button>
+<button class="tab-btn" onclick="switchTab('calculator')">🧮 临床计算器</button>
+<button class="tab-btn" onclick="switchTab('aiChat')">🤖 AI对话</button>
+</div>
+
+<!-- ===== 入院记录 Panel ===== -->
+<div class="tab-panel active" id="panel-admission">
+<div class="record-form" id="recordForm">
+<div class="form-title"><h2>入 院 记 录</h2></div>
+<div class="form-sub">（按三级医院病历书写规范）</div>
+
+<!-- 患者信息表格 -->
+<table class="pt-info-table">
+<tr>
+<td class="lbl">姓名</td><td class="val"><input type="text" id="patientName"></td>
+<td class="lbl">性别</td><td class="val"><select id="patientGender" style="border:none;background:transparent;width:100%;font-size:14px;outline:none;color:var(--c-text)"><option value=""></option><option>男</option><option>女</option></select></td>
+<td class="lbl">年龄</td><td class="val"><input type="text" id="patientAge"></td>
+<td class="lbl">民族</td><td class="val"><input type="text" id="nation" value="汉族"></td>
+</tr>
+<tr>
+<td class="lbl">婚姻</td><td class="val"><select id="marital" style="border:none;background:transparent;width:100%;font-size:14px;outline:none;color:var(--c-text)"><option value=""></option><option>已婚</option><option>未婚</option><option>离异</option><option>丧偶</option></select></td>
+<td class="lbl">职业</td><td class="val"><input type="text" id="occupation"></td>
+<td class="lbl">籍贯</td><td class="val" colspan="3"><input type="text" id="nativePlace" placeholder="如：广东省广州市"></td>
+</tr>
+<tr>
+<td class="lbl">住址</td><td class="val" colspan="3"><input type="text" id="address"></td>
+<td class="lbl">单位</td><td class="val"><input type="text" id="workUnit"></td>
+</tr>
+<tr>
+<td class="lbl-wide">病史陈述者</td><td class="val"><input type="text" id="historyProvider" value="患者本人"></td>
+<td class="lbl-wide">与患者关系</td><td class="val"><input type="text" id="providerRelation" value="本人"></td>
+<td class="lbl-wide">病史可靠程度</td><td class="val"><select id="reliability" style="border:none;background:transparent;width:100%;font-size:14px;outline:none;color:var(--c-text)"><option>可靠</option><option>基本可靠</option><option>欠可靠</option></select></td>
+</tr>
+<tr>
+<td class="lbl">入院日期</td><td class="val" colspan="3"><input type="datetime-local" id="admitDate"></td>
+<td class="lbl">记录日期</td><td class="val"><input type="datetime-local" id="recordDate"></td>
+</tr>
+</table>
+
+<div class="section">
+<div class="section-title"><span class="num">主</span>主诉</div>
+<textarea class="section-content" id="chiefComplaint" placeholder="主要症状/体征+持续时间，不超过20字"></textarea>
+</div>
+
+<div class="section">
+<div class="section-title"><span class="num">现</span>现病史</div>
+<textarea class="section-content lg" id="presentIllness" placeholder="一段话叙述：起病情况、症状特点、伴随症状、病情演变、诊疗经过、一般情况"></textarea>
+</div>
+
+<div class="section">
+<div class="section-title"><span class="num">既</span>既往史</div>
+<textarea class="section-content md" id="pastHistory" placeholder="健康状况、疾病史、传染病史、预防接种、外伤手术史、输血史、过敏史"></textarea>
+</div>
+
+<div class="section">
+<div class="section-title"><span class="num">个</span>个人史</div>
+<textarea class="section-content" id="personalHistory" placeholder="出生地、居住地、疫水接触史、职业、生活习惯（吸烟饮酒）"></textarea>
+</div>
+
+<div class="section">
+<div class="section-title"><span class="num">经</span>月经史 <span style="font-size:12px;color:var(--c-text-muted);font-weight:normal">（女性填写）</span></div>
+<textarea class="section-content" id="menstrualHistory" placeholder="初潮年龄/周期/经期/末次月经/绝经年龄。男性填：无"></textarea>
+</div>
+
+<div class="section">
+<div class="section-title"><span class="num">育</span>婚育史</div>
+<textarea class="section-content" id="maritalHistory" placeholder="结婚年龄、配偶健康状况、孕产史"></textarea>
+</div>
+
+<div class="section">
+<div class="section-title"><span class="num">家</span>家族史</div>
+<textarea class="section-content" id="familyHistory" placeholder="父母、兄弟姐妹、子女健康状况；家族遗传病、传染病；类似疾病"></textarea>
+</div>
+
+<div class="section">
+<div class="section-title"><span class="num">体</span>体格检查
+<button type="button" class="qa-btn" onclick="fillNormalPE()" style="margin-left:auto">📋 填入正常体检模板</button>
+<button type="button" class="qa-btn" onclick="regeneratePE()" style="margin-left:8px">🔄 重新生成体检</button>
+</div>
+<div class="pe-vitals">
+<div class="vital"><div class="vlabel">T（体温）</div><input type="text" id="t" placeholder="36.5℃"></div>
+<div class="vital"><div class="vlabel">P（脉搏）</div><input type="text" id="p" placeholder="78次/分"></div>
+<div class="vital"><div class="vlabel">R（呼吸）</div><input type="text" id="r" placeholder="18次/分"></div>
+<div class="vital"><div class="vlabel">BP（血压）</div><input type="text" id="bp" placeholder="120/80mmHg"></div>
+</div>
+<textarea class="section-content flow" id="physicalExam" placeholder="选择疾病后自动生成完整体格检查..."></textarea>
+</div>
+
+<div class="section">
+<div class="section-title"><span class="num">专</span>专科检查
+</div>
+<textarea class="section-content xl" id="specialistExam" placeholder="本专科特有检查"></textarea>
+</div>
+
+<div class="section">
+<div class="section-title"><span class="num">辅</span>辅助检查</div>
+<textarea class="section-content md" id="auxiliaryExam" placeholder="注明检查日期及医院"></textarea>
+</div>
+
+<div class="section">
+<div class="section-title"><span class="num">诊</span>初步诊断</div>
+<div class="dx-box"><textarea id="admitDiagnosis" placeholder="1. ...&#10;2. ..." style="min-height:80px"></textarea></div>
+</div>
+
+<div class="section">
+<div class="section-title"><span class="num">终</span>最后诊断 <span style="font-size:12px;color:var(--c-text-muted);font-weight:normal">（出院时填写）</span></div>
+<div class="dx-box"><textarea id="finalDiagnosis" placeholder="1. ...&#10;2. ..." style="min-height:80px"></textarea></div>
+</div>
+
+<div class="signature-area">
+<div class="sig-box"><div class="line"></div><div class="label">住院医师</div></div>
+<div class="sig-box"><div class="line"></div><div class="label">上级医师</div></div>
+</div>
+</div>
+</div>
+
+<!-- ===== 首次病程记录 Panel ===== -->
+<div class="tab-panel" id="panel-firstCourse">
+<div class="course-record">
+<div class="course-title"><h2>首 次 病 程 记 录</h2></div>
+<textarea class="course-textarea lg" id="firstCourse" placeholder="选择疾病后自动填充首次病程记录..."></textarea>
+<div class="signature-area">
+<div class="sig-box"><div class="line"></div><div class="label">医师签名</div></div>
+<div class="sig-box"><div class="line"></div><div class="label">科主任签名</div></div>
+</div>
+</div>
+</div>
+
+<!-- ===== 日常病程记录 Panel ===== -->
+<div class="tab-panel" id="panel-dailyCourse">
+<div class="course-record">
+<div class="course-title"><h2>日 常 病 程 记 录</h2></div>
+<textarea class="course-textarea lg" id="dailyCourse" placeholder="选择疾病后自动填充日常病程记录..."></textarea>
+<div class="signature-area">
+<div class="sig-box"><div class="line"></div><div class="label">医师签名</div></div>
+</div>
+</div>
+</div>
+
+<!-- ===== 出院记录 Panel ===== -->
+<div class="tab-panel" id="panel-discharge">
+<div class="course-record">
+<div class="course-title"><h2>出 院 记 录</h2></div>
+<textarea class="course-textarea lg" id="dischargeRecord" placeholder="选择疾病后自动填充出院记录..."></textarea>
+<div class="signature-area">
+<div class="sig-box"><div class="line"></div><div class="label">医师签名</div></div>
+</div>
+</div>
+</div>
+
+<!-- ===== 临床路径 Panel ===== -->
+<div class="tab-panel" id="panel-pathway">
+<div class="cp-container" id="pathwayContainer">
+<div class="cp-empty">请先在左侧选择疾病，系统将自动显示该疾病的临床路径</div>
+</div>
+</div>
+
+<!-- ===== 临床计算器 Panel ===== -->
+<div class="tab-panel" id="panel-calculator">
+<div class="calc-container">
+<div class="calc-header">
+<h2>🧮 临床医学计算与评分决策工具</h2>
+</div>
+
+<div class="calc-nav">
+<button class="calc-nav-btn active" onclick="switchCalcCat('renal', this)">🏥 肾脏、代谢与体征</button>
+<button class="calc-nav-btn" onclick="switchCalcCat('hepatic', this)">🩺 肝胆与消化系统</button>
+<button class="calc-nav-btn" onclick="switchCalcCat('pulm', this)">🫁 呼吸重症与血管急症</button>
+<button class="calc-nav-btn" onclick="switchCalcCat('surg', this)">🚑 外科烧伤与儿科</button>
+<button class="calc-nav-btn" onclick="switchCalcCat('neuro', this)">🧠 神经与意识评估</button>
+<button class="calc-nav-btn" onclick="switchCalcCat('cardio', this)">❤️ 心血管与急重症评分</button>
+<button class="calc-nav-btn" onclick="switchCalcCat('common', this)">🧬 通用与妇产</button>
+</div>
+
+<!-- 1. 肾脏、代谢与体征 -->
+<div class="calc-cat-panel active" id="calc-cat-renal">
+<div class="calc-card">
+<div class="calc-card-header">
+<div><span>内科/肾脏</span> <b>肌酐清除率 (Ccr) 与 eGFR (CKD-EPI) 计算器</b></div>
+<div class="calc-source">📚 人卫第10版《内科学》P522 / CKD指南</div>
+</div>
+<div class="calc-card-body">
+<div class="calc-form-grid">
+<div class="calc-field"><label>性别</label><select id="ccr_gender"><option value="male">男</option><option value="female">女</option></select></div>
+<div class="calc-field"><label>年龄 (岁)</label><input type="number" id="ccr_age" value="50" min="1" max="120"></div>
+<div class="calc-field"><label>体重 (kg)</label><input type="number" id="ccr_weight" value="65" min="1" max="300"></div>
+<div class="calc-field"><label>血肌酐 Scr (μmol/L)</label><input type="number" id="ccr_scr" value="88" min="1"></div>
+</div>
+<div class="calc-action-bar"><button class="btn btn-primary" onclick="calcCcr()">⚡ 立即计算</button></div>
+<div class="calc-result-box" id="res_ccr" style="display:none"></div>
+</div>
+</div>
+
+<div class="calc-card">
+<div class="calc-card-header">
+<div><span>基础体征</span> <b>体表面积 (BSA) - 许文生中国人群公式 & DuBois公式</b></div>
+<div class="calc-source">📚 人卫第10版《儿科学》P45、《外科学》P129</div>
+</div>
+<div class="calc-card-body">
+<div class="calc-form-grid">
+<div class="calc-field"><label>身高 (cm)</label><input type="number" id="bsa_height" value="170"></div>
+<div class="calc-field"><label>体重 (kg)</label><input type="number" id="bsa_weight" value="65"></div>
+</div>
+<div class="calc-action-bar"><button class="btn btn-primary" onclick="calcBSA()">⚡ 立即计算</button></div>
+<div class="calc-result-box" id="res_bsa" style="display:none"></div>
+</div>
+</div>
+
+<div class="calc-card">
+<div class="calc-card-header">
+<div><span>内科/代谢</span> <b>校正血钙 (Corrected Calcium)</b></div>
+<div class="calc-source">📚 人卫第10版《内科学》P801</div>
+</div>
+<div class="calc-card-body">
+<div class="calc-form-grid">
+<div class="calc-field"><label>实测血钙 (mmol/L)</label><input type="number" id="ca_val" step="0.01" value="2.00"></div>
+<div class="calc-field"><label>血清白蛋白 ALB (g/L)</label><input type="number" id="ca_alb" value="30"></div>
+</div>
+<div class="calc-action-bar"><button class="btn btn-primary" onclick="calcCorrectedCa()">⚡ 立即计算</button></div>
+<div class="calc-result-box" id="res_ca" style="display:none"></div>
+</div>
+</div>
+
+<div class="calc-card">
+<div class="calc-card-header">
+<div><span>水电解质</span> <b>阴离子隙 (AG) 与缺钠/补钠量计算器</b></div>
+<div class="calc-source">📚 人卫第10版《内科学》P789-792</div>
+</div>
+<div class="calc-card-body">
+<div class="calc-form-grid">
+<div class="calc-field"><label>血钠 Na⁺ (mmol/L)</label><input type="number" id="ag_na" value="130"></div>
+<div class="calc-field"><label>血氯 Cl⁻ (mmol/L)</label><input type="number" id="ag_cl" value="98"></div>
+<div class="calc-field"><label>碳酸氢根 HCO₃⁻ (mmol/L)</label><input type="number" id="ag_hco3" value="18"></div>
+<div class="calc-field"><label>性别</label><select id="ag_gender"><option value="male">男(系数0.6)</option><option value="female">女(系数0.5)</option></select></div>
+<div class="calc-field"><label>体重 (kg)</label><input type="number" id="ag_weight" value="60"></div>
+</div>
+<div class="calc-action-bar"><button class="btn btn-primary" onclick="calcAG()">⚡ 立即计算</button></div>
+<div class="calc-result-box" id="res_ag" style="display:none"></div>
+</div>
+</div>
+</div>
+
+<!-- 2. 肝胆与消化系统 -->
+<div class="calc-cat-panel" id="calc-cat-hepatic">
+<div class="calc-card">
+<div class="calc-card-header">
+<div><span>普外/肝胆</span> <b>Child-Pugh 肝功能分级评估</b></div>
+<div class="calc-source">📚 人卫第10版《外科学》P418</div>
+</div>
+<div class="calc-card-body">
+<div class="calc-form-grid">
+<div class="calc-field"><label>肝性脑病</label>
+<select id="cp_encephalopathy">
+<option value="1">无 (1分)</option>
+<option value="2">Ⅰ~Ⅱ期 (轻度/中度) (2分)</option>
+<option value="3">Ⅲ~Ⅳ期 (重度/昏迷) (3分)</option>
+</select></div>
+<div class="calc-field"><label>腹水情况</label>
+<select id="cp_ascites">
+<option value="1">无腹水 (1分)</option>
+<option value="2">少量至中量，易控制 (2分)</option>
+<option value="3">大量或顽固难控制 (3分)</option>
+</select></div>
+<div class="calc-field"><label>总胆红素 TBIL (μmol/L)</label>
+<select id="cp_tbil">
+<option value="1">&lt; 34.2 μmol/L (&lt;2mg/dL) (1分)</option>
+<option value="2">34.2 ~ 51.3 μmol/L (2~3mg/dL) (2分)</option>
+<option value="3">&gt; 51.3 μmol/L (&gt;3mg/dL) (3分)</option>
+</select></div>
+<div class="calc-field"><label>血清白蛋白 ALB (g/L)</label>
+<select id="cp_alb">
+<option value="1">&gt; 35 g/L (1分)</option>
+<option value="2">28 ~ 35 g/L (2分)</option>
+<option value="3">&lt; 28 g/L (3分)</option>
+</select></div>
+<div class="calc-field"><label>凝血酶原时间延长 PT (秒/INR)</label>
+<select id="cp_pt">
+<option value="1">延长 &lt; 4秒 (INR &lt; 1.7) (1分)</option>
+<option value="2">延长 4~6秒 (INR 1.7~2.3) (2分)</option>
+<option value="3">延长 &gt; 6秒 (INR &gt; 2.3) (3分)</option>
+</select></div>
+</div>
+<div class="calc-action-bar"><button class="btn btn-primary" onclick="calcChildPugh()">⚡ 评定肝功能等级</button></div>
+<div class="calc-result-box" id="res_cp" style="display:none"></div>
+</div>
+</div>
+
+<div class="calc-card">
+<div class="calc-card-header">
+<div><span>消化/感染</span> <b>FIB-4 指数 & APRI 肝纤维化无创评分</b></div>
+<div class="calc-source">📚 中华医学会《慢性乙型肝炎防治指南》/人卫第10版《内科学》P431</div>
+</div>
+<div class="calc-card-body">
+<div class="calc-form-grid">
+<div class="calc-field"><label>年龄 (岁)</label><input type="number" id="fib_age" value="45"></div>
+<div class="calc-field"><label>谷草转氨酶 AST (U/L)</label><input type="number" id="fib_ast" value="65"></div>
+<div class="calc-field"><label>谷丙转氨酶 ALT (U/L)</label><input type="number" id="fib_alt" value="50"></div>
+<div class="calc-field"><label>血小板计数 PLT (10⁹/L)</label><input type="number" id="fib_plt" value="120"></div>
+</div>
+<div class="calc-action-bar"><button class="btn btn-primary" onclick="calcFIB4()">⚡ 计算 FIB-4 & APRI</button></div>
+<div class="calc-result-box" id="res_fib" style="display:none"></div>
+</div>
+</div>
+
+<div class="calc-card">
+<div class="calc-card-header">
+<div><span>肝胆/移植</span> <b>MELD 终末期肝病模型评分</b></div>
+<div class="calc-source">📚 人卫第10版《内科学》P433 / 肝移植分配标准</div>
+</div>
+<div class="calc-card-body">
+<div class="calc-form-grid">
+<div class="calc-field"><label>血清胆红素 TBIL (μmol/L)</label><input type="number" id="meld_tbil" value="85" step="0.1"></div>
+<div class="calc-field"><label>凝血酶原国际标准化比值 INR</label><input type="number" id="meld_inr" value="1.8" step="0.1"></div>
+<div class="calc-field"><label>血肌酐 Scr (μmol/L)</label><input type="number" id="meld_scr" value="120" step="0.1"></div>
+<div class="calc-field"><label>近1周内是否透析≥2次</label><select id="meld_dialysis"><option value="no">否</option><option value="yes">是 (Scr自动按4.0mg/dL计)</option></select></div>
+</div>
+<div class="calc-action-bar"><button class="btn btn-primary" onclick="calcMELD()">⚡ 计算 MELD 评分</button></div>
+<div class="calc-result-box" id="res_meld" style="display:none"></div>
+</div>
+</div>
+</div>
+
+<div class="calc-card">
+<div class="calc-card-header">
+<div><span>消化/急诊</span> <b>Glasgow-Blatchford 上消化道出血风险评分</b></div>
+<div class="calc-source">📚 Blatchford 等 2000 / 上消化道出血诊疗指南</div>
+</div>
+<div class="calc-card-body">
+<div class="calc-form-grid">
+<div class="calc-field"><label>性别</label><select id="gb_gender"><option value="male">男</option><option value="female">女</option></select></div>
+<div class="calc-field"><label>血尿素氮 BUN (mmol/L)</label><input type="number" id="gb_bun" value="8" step="0.1" min="1" max="60"></div>
+<div class="calc-field"><label>血红蛋白 Hb (g/L)</label><input type="number" id="gb_hb" value="110" min="30" max="250"></div>
+<div class="calc-field"><label>收缩压 SBP (mmHg)</label><input type="number" id="gb_sbp" value="110" min="50" max="250"></div>
+<div class="calc-field"><label>脉搏 (次/分)</label><input type="number" id="gb_pulse" value="90" min="30" max="200"></div>
+</div>
+<div class="calc-check-grid">
+<label class="calc-checkbox"><input type="checkbox" id="gb_melena"> 黑便 (+1分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="gb_syncope"> 晕厥 (+2分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="gb_liver"> 肝病 (+2分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="gb_hf"> 心力衰竭 (+2分)</label>
+</div>
+<div class="calc-action-bar"><button class="btn btn-primary" onclick="calcBlatchford()">⚡ 计算 Blatchford 评分</button></div>
+<div class="calc-result-box" id="res_gb" style="display:none"></div>
+</div>
+</div>
+
+<!-- 3. 呼吸重症与血管急症 -->
+<div class="calc-cat-panel" id="calc-cat-pulm">
+<div class="calc-card">
+<div class="calc-card-header">
+<div><span>呼吸/急重症</span> <b>CURB-65 社区获得性肺炎 (CAP) 重症评分</b></div>
+<div class="calc-source">📚 人卫第10版《内科学》P48 / 《中国CAP指南》</div>
+</div>
+<div class="calc-card-body">
+<div class="calc-check-grid">
+<label class="calc-checkbox"><input type="checkbox" id="curb_c"> <b>C - Confusion</b>：存在精神或意识障碍改变 (+1分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="curb_u"> <b>U - Urea</b>：血尿素氮 &gt; 7.0 mmol/L (19mg/dL) (+1分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="curb_r"> <b>R - Respiratory rate</b>：呼吸频率 ≥ 30 次/分 (+1分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="curb_b"> <b>B - Blood pressure</b>：收缩压 &lt; 90 或 舒张压 ≤ 60 mmHg (+1分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="curb_65"> <b>65 - Age</b>：年龄 ≥ 65 岁 (+1分)</label>
+</div>
+<div class="calc-action-bar"><button class="btn btn-primary" onclick="calcCURB65()">⚡ 计算 CURB-65 评分</button></div>
+<div class="calc-result-box" id="res_curb" style="display:none"></div>
+</div>
+</div>
+
+<div class="calc-card">
+<div class="calc-card-header">
+<div><span>血管外科/急诊</span> <b>Wells 下肢深静脉血栓 (DVT) 临床风险评分</b></div>
+<div class="calc-source">📚 人卫第10版《外科学》P542 / 血管外科指南</div>
+</div>
+<div class="calc-card-body">
+<div class="calc-check-grid">
+<label class="calc-checkbox"><input type="checkbox" id="wells_1"> 活性肿瘤 (过去6个月内接受过治疗或姑息治疗) (+1分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="wells_2"> 下肢瘫痪、假肢或近期下肢石膏固定制动 (+1分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="wells_3"> 近期卧床 &gt; 3天 或 4周内接受过全身/区域麻醉大手术 (+1分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="wells_4"> 沿深静脉系统走行的局部压痛 (+1分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="wells_5"> 全下肢肿胀 (+1分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="wells_6"> 患侧小腿围度比对侧大 &gt; 3cm (膝下10cm处测量) (+1分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="wells_7"> 患侧下肢凹陷性水肿 (比健康侧更重) (+1分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="wells_8"> 侧支浅静脉扩张 (非静脉曲张) (+1分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="wells_9"> 曾经证实有 DVT 病史 (+1分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="wells_alt"> 存在其他比 DVT 可能性更大的替代诊断 (-2分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="wells_two_tier"> 使用两分法判读（评分 &lt; 2 为低危，≥ 2 为 DVT 可能性大）</label>
+</div>
+<div class="calc-action-bar"><button class="btn btn-primary" onclick="calcWellsDVT()">⚡ 评估 DVT 风险</button></div>
+<div class="calc-result-box" id="res_wells" style="display:none"></div>
+</div>
+</div>
+
+<div class="calc-card">
+<div class="calc-card-header">
+<div><span>呼吸/急诊</span> <b>Wells 肺栓塞 (PE) 临床概率评分</b></div>
+<div class="calc-source">📚 人卫第10版《内科学》P67 / ESC肺栓塞指南</div>
+</div>
+<div class="calc-card-body">
+<div class="calc-check-grid">
+<label class="calc-checkbox"><input type="checkbox" id="wpe_1"> PE比其他诊断可能性更大 (+3分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="wpe_2"> 心率 &gt; 100 次/分 (+1.5分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="wpe_3"> 过去4周内制动或外科手术 (+1.5分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="wpe_4"> 既往DVT/PE病史 (+1.5分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="wpe_5"> 咯血 (+1分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="wpe_6"> 恶性肿瘤 (正在治疗或6月内姑息治疗) (+1分)</label>
+</div>
+<div class="calc-action-bar"><button class="btn btn-primary" onclick="calcWellsPE()">⚡ 评估 PE 风险</button></div>
+<div class="calc-result-box" id="res_wpe" style="display:none"></div>
+</div>
+</div>
+</div>
+
+<!-- 4. 外科烧伤与儿科 -->
+<div class="calc-cat-panel" id="calc-cat-surg">
+<div class="calc-card">
+<div class="calc-card-header">
+<div><span>烧伤外科</span> <b>烧伤面积 (中国九分法) 与第1个 24h 补液复苏计算器</b></div>
+<div class="calc-source">📚 人卫第10版《外科学》P132-136</div>
+</div>
+<div class="calc-card-body">
+<div class="calc-form-grid">
+<div class="calc-field"><label>患者人群</label>
+<select id="burn_type">
+<option value="adult">成人 (额外补液 1.5ml/kg/%烧伤面积)</option>
+<option value="child">儿童 (额外补液 2.0ml/kg/%烧伤面积)</option>
+</select></div>
+<div class="calc-field"><label>体重 (kg)</label><input type="number" id="burn_weight" value="60"></div>
+<div class="calc-field"><label>Ⅱ度与Ⅲ度烧伤总面积 (%)</label><input type="number" id="burn_area" value="30" min="1" max="100"></div>
+<div class="calc-field"><label>晶体与胶体比例</label>
+<select id="burn_ratio">
+<option value="2:1">中度/重度烧伤 (晶体:胶体 = 2:1)</option>
+<option value="1:1">特重度/深Ⅲ度烧伤 (晶体:胶体 = 1:1)</option>
+</select></div>
+</div>
+<div class="calc-action-bar"><button class="btn btn-primary" onclick="calcBurnFluid()">⚡ 计算第一个 24h 补液量</button></div>
+<div class="calc-result-box" id="res_burn" style="display:none"></div>
+</div>
+</div>
+
+<div class="calc-card">
+<div class="calc-card-header">
+<div><span>儿科专业</span> <b>小儿标准体重估算与脱水补液张力推算</b></div>
+<div class="calc-source">📚 人卫第10版《儿科学》P47, P235</div>
+</div>
+<div class="calc-card-body">
+<div class="calc-form-grid">
+<div class="calc-field"><label>年龄阶段</label>
+<select id="pedia_age_stage">
+<option value="m1_6">1 ~ 6 个月</option>
+<option value="m7_12">7 ~ 12 个月</option>
+<option value="y2_12" selected>2 ~ 12 岁</option>
+</select></div>
+<div class="calc-field"><label id="pedia_age_label">年龄 (岁 或 月)</label><input type="number" id="pedia_age_val" value="5"></div>
+<div class="calc-field"><label>脱水程度评估</label>
+<select id="pedia_dehydrate">
+<option value="mild">轻度脱水 (约50ml/kg)</option>
+<option value="mod" selected>中度脱水 (约50~100ml/kg)</option>
+<option value="severe">重度脱水 (约100~120ml/kg，需先扩容)</option>
+</select></div>
+<div class="calc-field"><label>脱水性质 (血钠)</label>
+<select id="pedia_sodium">
+<option value="iso" selected>等渗性脱水 (Na⁺ 130~150mmol/L) -&gt; 补 1/2张液</option>
+<option value="hypo">低渗性脱水 (Na⁺ &lt;130mmol/L) -&gt; 补 2/3张液</option>
+<option value="hyper">高渗性脱水 (Na⁺ &gt;150mmol/L) -&gt; 补 1/3~1/5张液</option>
+</select></div>
+</div>
+<div class="calc-action-bar"><button class="btn btn-primary" onclick="calcPedia()">⚡ 计算估算体重与补液方案</button></div>
+<div class="calc-result-box" id="res_pedia" style="display:none"></div>
+</div>
+</div>
+</div>
+
+<!-- 5. 神经与意识评估 -->
+<div class="calc-cat-panel" id="calc-cat-neuro">
+<div class="calc-card">
+<div class="calc-card-header">
+<div><span>神经/急重症</span> <b>GCS 格拉斯哥昏迷评分</b></div>
+<div class="calc-source">📚 人卫第10版《外科学》P205 / 《神经病学》</div>
+</div>
+<div class="calc-card-body">
+<div style="background:var(--c-primary-surface);border:1px solid var(--c-border);padding:12px 14px;border-radius:8px;margin-bottom:14px">
+<b style="font-size:13px;color:var(--c-primary)">📋 患者信息（用于打印报告）</b>
+<div style="display:flex;gap:12px;margin-top:10px;flex-wrap:wrap">
+<div class="calc-field" style="flex:2;min-width:140px"><label>姓名</label><input type="text" id="gcs_pt_name" placeholder="患者姓名"></div>
+<div class="calc-field" style="flex:0 0 90px"><label>性别</label><select id="gcs_pt_gender"><option value="">--</option><option>男</option><option>女</option></select></div>
+<div class="calc-field" style="flex:0 0 90px"><label>年龄</label><input type="number" id="gcs_pt_age" placeholder="岁" min="0" max="150"></div>
+<div class="calc-field" style="flex:0 0 110px"><label>床号</label><input type="text" id="gcs_pt_bed" placeholder="如A12"></div>
+<div class="calc-field" style="flex:0 0 160px"><label>住院号</label><input type="text" id="gcs_pt_hospNo" placeholder="如20260806"></div>
+<div class="calc-field" style="flex:0 0 160px"><label>科室</label><input type="text" id="gcs_pt_dept" placeholder="如神经外科"></div>
+<div class="calc-field" style="flex:0 0 170px"><label>评估日期</label><input type="datetime-local" id="gcs_pt_date"></div>
+</div>
+</div>
+<div class="calc-form-grid">
+<div class="calc-field"><label>睁眼反应 (Eye Opening)</label>
+<select id="gcs_eye">
+<option value="4">4 - 自动睁眼</option>
+<option value="3">3 - 呼唤睁眼</option>
+<option value="2">2 - 刺痛睁眼</option>
+<option value="1">1 - 不睁眼</option>
+</select></div>
+<div class="calc-field"><label>言语反应 (Verbal Response)</label>
+<select id="gcs_verbal">
+<option value="5">5 - 回答正确</option>
+<option value="4">4 - 回答错误</option>
+<option value="3">3 - 言语不当/含混</option>
+<option value="2">2 - 只能发音</option>
+<option value="1">1 - 不言语</option>
+</select></div>
+<div class="calc-field"><label>运动反应 (Motor Response)</label>
+<select id="gcs_motor">
+<option value="6">6 - 遵嘱动作</option>
+<option value="5">5 - 刺痛定位</option>
+<option value="4">4 - 刺痛屈曲(逃避)</option>
+<option value="3">3 - 刺痛异常屈曲(去皮质)</option>
+<option value="2">2 - 刺痛异常伸直(去脑)</option>
+<option value="1">1 - 不动</option>
+</select></div>
+</div>
+<div class="calc-action-bar">
+<button class="btn btn-primary" onclick="calcGCS()">⚡ 计算 GCS 评分</button>
+<button class="btn btn-outline" onclick="printAssessmentResult('gcs')">🖨️ 打印评估结果</button>
+</div>
+<div class="calc-result-box" id="res_gcs" style="display:none"></div>
+</div>
+</div>
+
+<div class="calc-card">
+<div class="calc-card-header">
+<div><span>神经外科</span> <b>Hunt-Hess 动脉瘤性蛛网膜下腔出血分级</b></div>
+<div class="calc-source">📚 人卫第10版《外科学》P225</div>
+</div>
+<div class="calc-card-body">
+<div class="calc-form-grid">
+<div class="calc-field"><label>Hunt-Hess 分级</label>
+<select id="hh_grade">
+<option value="0">0级 - 未破裂动脉瘤，无症状</option>
+<option value="1">Ⅰ级 - 无症状或轻度头痛、颈项强直</option>
+<option value="2">Ⅱ级 - 中~重度头痛、脑膜刺激征</option>
+<option value="3">Ⅲ级 - 嗜睡/意识模糊，轻度局灶神经体征</option>
+<option value="4">Ⅳ级 - 昏迷，中~重度偏瘫</option>
+<option value="5">Ⅴ级 - 深昏迷，去脑强直</option>
+</select></div>
+</div>
+<div class="calc-action-bar"><button class="btn btn-primary" onclick="calcHuntHess()">⚡ 评估 Hunt-Hess 分级</button></div>
+<div class="calc-result-box" id="res_hh" style="display:none"></div>
+</div>
+</div>
+
+<div class="calc-card">
+<div class="calc-card-header">
+<div><span>血管外科/骨科</span> <b>Caprini 围手术期静脉血栓风险评估量表</b></div>
+<div class="calc-source">📚 人卫第10版《外科学》P542-543（Caprini 2005/2010 版风险分层）</div>
+</div>
+<div class="calc-card-body">
+<div style="background:var(--c-primary-surface);border:1px solid var(--c-border);padding:12px 14px;border-radius:8px;margin-bottom:14px">
+<b style="font-size:13px;color:var(--c-primary)">📋 患者信息（用于打印报告）</b>
+<div style="display:flex;gap:12px;margin-top:10px;flex-wrap:wrap">
+<div class="calc-field" style="flex:2;min-width:140px"><label>姓名</label><input type="text" id="caprini_pt_name" placeholder="患者姓名"></div>
+<div class="calc-field" style="flex:0 0 90px"><label>性别</label><select id="caprini_pt_gender"><option value="">--</option><option>男</option><option>女</option></select></div>
+<div class="calc-field" style="flex:0 0 90px"><label>年龄</label><input type="number" id="caprini_pt_age" placeholder="岁" min="0" max="150"></div>
+<div class="calc-field" style="flex:0 0 110px"><label>床号</label><input type="text" id="caprini_pt_bed" placeholder="如A12"></div>
+<div class="calc-field" style="flex:0 0 160px"><label>住院号</label><input type="text" id="caprini_pt_hospNo" placeholder="如20260806"></div>
+<div class="calc-field" style="flex:0 0 160px"><label>科室</label><input type="text" id="caprini_pt_dept" placeholder="如骨科"></div>
+<div class="calc-field" style="flex:0 0 170px"><label>评估日期</label><input type="datetime-local" id="caprini_pt_date"></div>
+</div>
+</div>
+<div class="calc-check-grid">
+<label class="calc-checkbox"><input type="checkbox" id="caprini_1"> 年龄 41~60岁 (+1分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="caprini_2"> 肥胖 BMI &gt; 25 kg/m² (+1分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="caprini_3"> 下肢水肿、静脉曲张、石膏制动 (+1分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="caprini_4"> 严重肺炎、脓毒症、急性呼吸衰竭 (+1分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="caprini_5"> 年龄 61~74岁 (+2分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="caprini_6"> 中心静脉置管 (+2分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="caprini_7"> 关节镜手术、大手术 &gt; 45min (+2分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="caprini_8"> 腹腔镜手术 &gt; 45min (+2分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="caprini_9"> 癌症、既往DVT/PE病史 (+3分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="caprini_10"> 卧床 &gt; 72小时、石膏固定下肢、下肢瘫痪 (+3分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="caprini_11"> 择期人工关节置换术、髋/骨盆/股骨骨折手术 (+5分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="caprini_12"> 年龄 ≥ 75岁 (+4分)</label>
+</div>
+<div class="calc-action-bar">
+<button class="btn btn-primary" onclick="calcCaprini()">⚡ 计算 Caprini 评分</button>
+<button class="btn btn-outline" onclick="printAssessmentResult('caprini')">🖨️ 打印评估结果</button>
+</div>
+<div class="calc-result-box" id="res_caprini" style="display:none"></div>
+</div>
+</div>
+
+<div class="calc-card">
+<div class="calc-card-header">
+<div><span>血管/内科</span> <b>Padua 内科住院患者静脉血栓栓塞症风险评估</b></div>
+<div class="calc-source">📚 人卫第10版《内科学》P71 / 血栓指南</div>
+</div>
+<div class="calc-card-body">
+<div style="background:var(--c-primary-surface);border:1px solid var(--c-border);padding:12px 14px;border-radius:8px;margin-bottom:14px">
+<b style="font-size:13px;color:var(--c-primary)">📋 患者信息（用于打印报告）</b>
+<div style="display:flex;gap:12px;margin-top:10px;flex-wrap:wrap">
+<div class="calc-field" style="flex:2;min-width:140px"><label>姓名</label><input type="text" id="padua_pt_name" placeholder="患者姓名"></div>
+<div class="calc-field" style="flex:0 0 90px"><label>性别</label><select id="padua_pt_gender"><option value="">--</option><option>男</option><option>女</option></select></div>
+<div class="calc-field" style="flex:0 0 90px"><label>年龄</label><input type="number" id="padua_pt_age" placeholder="岁" min="0" max="150"></div>
+<div class="calc-field" style="flex:0 0 110px"><label>床号</label><input type="text" id="padua_pt_bed" placeholder="如A12"></div>
+<div class="calc-field" style="flex:0 0 160px"><label>住院号</label><input type="text" id="padua_pt_hospNo" placeholder="如20260806"></div>
+<div class="calc-field" style="flex:0 0 160px"><label>科室</label><input type="text" id="padua_pt_dept" placeholder="如内科"></div>
+<div class="calc-field" style="flex:0 0 170px"><label>评估日期</label><input type="datetime-local" id="padua_pt_date"></div>
+</div>
+</div>
+<div class="calc-check-grid">
+<label class="calc-checkbox"><input type="checkbox" id="padua_1"> 活动性肿瘤 (+3分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="padua_2"> 既往VTE病史 (+3分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="padua_3"> 减少活动 ≥ 3天 (+2分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="padua_4"> 已知易栓症 (+3分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="padua_5"> 近期（≤1个月）大手术或创伤 (+2分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="padua_6"> 高龄 ≥ 70岁 (+1分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="padua_7"> 心脏和/或呼吸衰竭 (+1分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="padua_8"> 急性心肌梗死和/或缺血性脑卒中 (+1分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="padua_9"> 急性感染和/或风湿性疾病 (+1分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="padua_10"> 肥胖 BMI ≥ 30 kg/m² (+1分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="padua_11"> 正在进行激素治疗 (+1分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="padua_12"> 血小板计数 > 100×10⁹/L，需要评估 (+1分)</label>
+</div>
+<div class="calc-action-bar">
+<button class="btn btn-primary" onclick="calcPadua()">⚡ 计算 Padua 评分</button>
+<button class="btn btn-outline" onclick="printAssessmentResult('padua')">🖨️ 打印评估结果</button>
+</div>
+<div class="calc-result-box" id="res_padua" style="display:none"></div>
+</div>
+</div>
+</div>
+
+<div class="calc-card">
+<div class="calc-card-header">
+<div><span>神经内科</span> <b>NIHSS 美国国立卫生研究院卒中量表</b></div>
+<div class="calc-source">📚 NIHSS 1989 / 中国急性缺血性脑卒中诊治指南</div>
+</div>
+<div class="calc-card-body">
+<div class="calc-form-grid">
+<div class="calc-field"><label>1a 意识水平</label><select id="nihss_1a"><option value="0">0-清醒</option><option value="1">1-嗜睡</option><option value="2">2-昏睡</option><option value="3">3-昏迷</option></select></div>
+<div class="calc-field"><label>1b 意识水平提问</label><select id="nihss_1b"><option value="0">0-均正确</option><option value="1">1-一项正确</option><option value="2">2-均不正确</option></select></div>
+<div class="calc-field"><label>1c 意识水平指令</label><select id="nihss_1c"><option value="0">0-均正确</option><option value="1">1-一项正确</option><option value="2">2-均不正确</option></select></div>
+<div class="calc-field"><label>2 凝视</label><select id="nihss_2"><option value="0">0-正常</option><option value="1">1-部分凝视麻痹</option><option value="2">2-强制偏视</option></select></div>
+<div class="calc-field"><label>3 视野</label><select id="nihss_3"><option value="0">0-无缺损</option><option value="1">1-部分偏盲</option><option value="2">2-完全偏盲</option><option value="3">3-双侧偏盲</option></select></div>
+<div class="calc-field"><label>4 面瘫</label><select id="nihss_4"><option value="0">0-正常</option><option value="1">1-轻度</option><option value="2">2-部分</option><option value="3">3-完全</option></select></div>
+<div class="calc-field"><label>5a 左上肢运动</label><select id="nihss_5a"><option value="0">0-无坠落</option><option value="1">1-5秒内坠落</option><option value="2">2-10秒内坠落</option><option value="3">3-不能抗重力</option><option value="4">4-无运动</option></select></div>
+<div class="calc-field"><label>5b 右上肢运动</label><select id="nihss_5b"><option value="0">0-无坠落</option><option value="1">1-5秒内坠落</option><option value="2">2-10秒内坠落</option><option value="3">3-不能抗重力</option><option value="4">4-无运动</option></select></div>
+<div class="calc-field"><label>6a 左下肢运动</label><select id="nihss_6a"><option value="0">0-无坠落</option><option value="1">1-5秒内坠落</option><option value="2">2-10秒内坠落</option><option value="3">3-不能抗重力</option><option value="4">4-无运动</option></select></div>
+<div class="calc-field"><label>6b 右下肢运动</label><select id="nihss_6b"><option value="0">0-无坠落</option><option value="1">1-5秒内坠落</option><option value="2">2-10秒内坠落</option><option value="3">3-不能抗重力</option><option value="4">4-无运动</option></select></div>
+<div class="calc-field"><label>7 共济失调</label><select id="nihss_7"><option value="0">0-无</option><option value="1">1-一侧肢体</option><option value="2">2-双侧肢体</option></select></div>
+<div class="calc-field"><label>8 感觉</label><select id="nihss_8"><option value="0">0-正常</option><option value="1">1-轻中度</option><option value="2">2-重度</option></select></div>
+<div class="calc-field"><label>9 语言</label><select id="nihss_9"><option value="0">0-正常</option><option value="1">1-轻中度失语</option><option value="2">2-重度失语</option><option value="3">3-哑/完全失语</option></select></div>
+<div class="calc-field"><label>10 构音障碍</label><select id="nihss_10"><option value="0">0-正常</option><option value="1">1-轻中度</option><option value="2">2-重度</option></select></div>
+<div class="calc-field"><label>11 忽视</label><select id="nihss_11"><option value="0">0-无</option><option value="1">1-单侧忽视</option><option value="2">2-严重偏侧忽视</option></select></div>
+</div>
+<div class="calc-action-bar"><button class="btn btn-primary" onclick="calcNIHSS()">⚡ 计算 NIHSS 评分</button></div>
+<div class="calc-result-box" id="res_nihss" style="display:none"></div>
+</div>
+</div>
+
+<!-- 6. 心血管与急重症评分 -->
+<div class="calc-cat-panel" id="calc-cat-cardio">
+<div class="calc-card">
+<div class="calc-card-header">
+<div><span>心血管</span> <b>CHA₂DS₂-VASc 房颤抗凝血栓风险评分</b></div>
+<div class="calc-source">📚 人卫第10版《内科学》P209 / ESC房颤管理指南</div>
+</div>
+<div class="calc-card-body">
+<div class="calc-check-grid">
+<label class="calc-checkbox"><input type="checkbox" id="chads_c"> C - 充血性心力衰竭 (+1分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="chads_h"> H - 高血压 (+1分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="chads_a75"> A₂ - 年龄 ≥ 75岁 (+2分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="chads_d"> D - 糖尿病 (+1分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="chads_s2"> S₂ - 既往卒中/TIA/血栓栓塞 (+2分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="chads_v"> V - 血管疾病 (+1分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="chads_a65"> A - 年龄 65~74岁 (+1分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="chads_sex"> Sc - 性别为女性 (+1分)</label>
+</div>
+<div class="calc-action-bar"><button class="btn btn-primary" onclick="calcCHADS()">⚡ 计算 CHA₂DS₂-VASc 评分</button></div>
+<div class="calc-result-box" id="res_chads" style="display:none"></div>
+</div>
+</div>
+
+<div class="calc-card">
+<div class="calc-card-header">
+<div><span>急重症/感染</span> <b>qSOFA 快速脓毒症相关器官衰竭评估</b></div>
+<div class="calc-source">📚 人卫第10版《内科学》P148 / SSC指南</div>
+</div>
+<div class="calc-card-body">
+<div class="calc-check-grid">
+<label class="calc-checkbox"><input type="checkbox" id="qsofa_1"> 呼吸频率 ≥ 22 次/分 (+1分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="qsofa_2"> 意识改变 (GCS &lt; 15) (+1分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="qsofa_3"> 收缩压 ≤ 100 mmHg (+1分)</label>
+</div>
+<div class="calc-action-bar"><button class="btn btn-primary" onclick="calcQSOFA()">⚡ 计算 qSOFA 评分</button></div>
+<div class="calc-result-box" id="res_qsofa" style="display:none"></div>
+</div>
+</div>
+
+<div class="calc-card">
+<div class="calc-card-header">
+<div><span>急重症</span> <b>MEWS 改良早期预警评分</b></div>
+<div class="calc-source">📚 人卫第10版《内科学》急危重症章节</div>
+</div>
+<div class="calc-card-body">
+<div class="calc-form-grid">
+<div class="calc-field"><label>收缩压 SBP (mmHg)</label>
+<select id="mews_sbp">
+<option value="3">≤ 70</option>
+<option value="2">71 ~ 80</option>
+<option value="1">81 ~ 100</option>
+<option value="0" selected>101 ~ 199</option>
+<option value="2">≥ 200</option>
+</select></div>
+<div class="calc-field"><label>心率 HR (次/分)</label>
+<select id="mews_hr">
+<option value="2">≤ 40</option>
+<option value="1">41 ~ 50</option>
+<option value="0" selected>51 ~ 100</option>
+<option value="1">101 ~ 110</option>
+<option value="2">111 ~ 129</option>
+<option value="3">≥ 130</option>
+</select></div>
+<div class="calc-field"><label>呼吸频率 RR (次/分)</label>
+<select id="mews_rr">
+<option value="3">≤ 8</option>
+<option value="0" selected>9 ~ 14</option>
+<option value="1">15 ~ 20</option>
+<option value="2">21 ~ 29</option>
+<option value="3">≥ 30</option>
+</select></div>
+<div class="calc-field"><label>意识水平 (AVPU)</label>
+<select id="mews_avpu">
+<option value="0" selected>A - 清醒</option>
+<option value="1">V - 对声音有反应</option>
+<option value="2">P - 对疼痛有反应</option>
+<option value="3">U - 无反应</option>
+</select></div>
+<div class="calc-field"><label>体温 T (℃)</label>
+<select id="mews_temp">
+<option value="2">≤ 35.0</option>
+<option value="0" selected>35.1 ~ 38.4</option>
+<option value="2">≥ 38.5</option>
+</select></div>
+</div>
+<div class="calc-action-bar"><button class="btn btn-primary" onclick="calcMEWS()">⚡ 计算 MEWS 评分</button></div>
+<div class="calc-result-box" id="res_mews" style="display:none"></div>
+</div>
+</div>
+
+<div class="calc-card">
+<div class="calc-card-header">
+<div><span>心血管/急诊</span> <b>TIMI 不稳定性心绞痛/非ST段抬高心梗风险评分</b></div>
+<div class="calc-source">📚 人卫第10版《内科学》P243</div>
+</div>
+<div class="calc-card-body">
+<div class="calc-check-grid">
+<label class="calc-checkbox"><input type="checkbox" id="timi_1"> 年龄 ≥ 65岁 (+1分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="timi_2"> ≥ 3个冠心病危险因素 (+1分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="timi_3"> 已知冠心病(冠脉狭窄 ≥ 50%) (+1分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="timi_4"> 过去7天内服用阿司匹林 (+1分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="timi_5"> 24小时内 ≥ 2次心绞痛发作 (+1分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="timi_6"> 心电图ST段偏移 ≥ 0.5mm (+1分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="timi_7"> 心肌标志物(肌钙蛋白)升高 (+1分)</label>
+</div>
+<div class="calc-action-bar"><button class="btn btn-primary" onclick="calcTIMI()">⚡ 计算 TIMI 风险评分</button></div>
+<div class="calc-result-box" id="res_timi" style="display:none"></div>
+</div>
+</div>
+
+<div class="calc-card">
+<div class="calc-card-header">
+<div><span>心电图</span> <b>QTc 校正QT间期（Bazett）</b></div>
+<div class="calc-source">📚 Bazett 公式 / 心电生理指南</div>
+</div>
+<div class="calc-card-body">
+<div class="calc-form-grid">
+<div class="calc-field"><label>性别</label><select id="qtc_gender"><option value="male">男</option><option value="female">女</option></select></div>
+<div class="calc-field"><label>QT 间期 (ms)</label><input type="number" id="qtc_qt" value="400" min="200" max="700"></div>
+<div class="calc-field"><label>心率 (次/分)</label><input type="number" id="qtc_hr" value="70" min="20" max="250"></div>
+</div>
+<div class="calc-action-bar"><button class="btn btn-primary" onclick="calcQTc()">⚡ 计算 QTc</button></div>
+<div class="calc-result-box" id="res_qtc" style="display:none"></div>
+</div>
+</div>
+
+<div class="calc-card">
+<div class="calc-card-header">
+<div><span>血流动力学</span> <b>平均动脉压 MAP</b></div>
+<div class="calc-source">📚 MAP = DBP + (SBP-DBP)/3</div>
+</div>
+<div class="calc-card-body">
+<div class="calc-form-grid">
+<div class="calc-field"><label>收缩压 SBP (mmHg)</label><input type="number" id="map_sbp" value="120" min="50" max="300"></div>
+<div class="calc-field"><label>舒张压 DBP (mmHg)</label><input type="number" id="map_dbp" value="80" min="30" max="200"></div>
+</div>
+<div class="calc-action-bar"><button class="btn btn-primary" onclick="calcMAP()">⚡ 计算 MAP</button></div>
+<div class="calc-result-box" id="res_map" style="display:none"></div>
+</div>
+</div>
+
+<div class="calc-card">
+<div class="calc-card-header">
+<div><span>急重症</span> <b>SOFA 序贯器官衰竭评分</b></div>
+<div class="calc-source">📚 Vincent 1996 / SSC 2021</div>
+</div>
+<div class="calc-card-body">
+<div class="calc-form-grid">
+<div class="calc-field"><label>呼吸（PaO2/FiO2 或 SpO2）</label><select id="sofa_resp"><option value="0">0-≥400（SpO2≥93%）</option><option value="1">1-300~399</option><option value="2">2-200~299</option><option value="3">3-100~199 伴机械通气</option><option value="4">4-&lt;100 伴机械通气</option></select></div>
+<div class="calc-field"><label>凝血（血小板 ×10⁹/L）</label><select id="sofa_coag"><option value="0">0-≥150</option><option value="1">1-100~149</option><option value="2">2-50~99</option><option value="3">3-20~49</option><option value="4">4-&lt;20</option></select></div>
+<div class="calc-field"><label>肝脏（胆红素 μmol/L）</label><select id="sofa_liver"><option value="0">0-&lt;20</option><option value="1">1-20~32</option><option value="2">2-33~101</option><option value="3">3-102~204</option><option value="4">4-&gt;204</option></select></div>
+<div class="calc-field"><label>循环（MAP/血管活性药）</label><select id="sofa_cv"><option value="0">0-MAP≥70</option><option value="1">1-MAP&lt;70</option><option value="2">2-多巴胺≤5 或多巴酚丁胺</option><option value="3">3-多巴胺&gt;5 或肾上腺素≤0.1</option><option value="4">4-多巴胺&gt;15 或肾上腺素&gt;0.1</option></select></div>
+<div class="calc-field"><label>神经（GCS）</label><select id="sofa_neuro"><option value="0">0-15</option><option value="1">1-13~14</option><option value="2">2-10~12</option><option value="3">3-6~9</option><option value="4">4-&lt;6</option></select></div>
+<div class="calc-field"><label>肾脏（肌酐 μmol/L 或尿量）</label><select id="sofa_renal"><option value="0">0-&lt;110</option><option value="1">1-110~170</option><option value="2">2-171~299</option><option value="3">3-300~440 或尿量&lt;500ml/d</option><option value="4">4-&gt;440 或尿量&lt;200ml/d</option></select></div>
+</div>
+<div class="calc-action-bar"><button class="btn btn-primary" onclick="calcSOFA()">⚡ 计算 SOFA 评分</button></div>
+<div class="calc-result-box" id="res_sofa" style="display:none"></div>
+</div>
+</div>
+
+<div class="calc-card">
+<div class="calc-card-header">
+<div><span>心血管/急诊</span> <b>GRACE ACS 风险评分</b></div>
+<div class="calc-source">📚 GRACE 2.0/1.0 风险模型</div>
+</div>
+<div class="calc-card-body">
+<div class="calc-form-grid">
+<div class="calc-field"><label>年龄 (岁)</label><input type="number" id="grace_age" value="60" min="20" max="120"></div>
+<div class="calc-field"><label>心率 (次/分)</label><input type="number" id="grace_hr" value="90" min="20" max="250"></div>
+<div class="calc-field"><label>收缩压 (mmHg)</label><input type="number" id="grace_sbp" value="130" min="50" max="250"></div>
+<div class="calc-field"><label>肌酐 (mg/dL)</label><input type="number" id="grace_cr" value="1.0" step="0.1" min="0.1" max="20"></div>
+<div class="calc-field"><label>Killip 分级</label><select id="grace_killip"><option value="1">Ⅰ</option><option value="2">Ⅱ</option><option value="3">Ⅲ</option><option value="4">Ⅳ</option></select></div>
+</div>
+<div class="calc-check-grid">
+<label class="calc-checkbox"><input type="checkbox" id="grace_ca"> 入院时心脏骤停 (+39分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="grace_st"> ST段偏移 (+28分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="grace_enz"> 心肌标志物升高 (+14分)</label>
+</div>
+<div class="calc-action-bar"><button class="btn btn-primary" onclick="calcGRACE()">⚡ 计算 GRACE 评分</button></div>
+<div class="calc-result-box" id="res_grace" style="display:none"></div>
+</div>
+</div>
+</div>
+<div class="calc-cat-panel" id="calc-cat-common">
+<div class="calc-card">
+<div class="calc-card-header">
+<div><span>基础体征</span> <b>BMI 体重指数</b></div>
+<div class="calc-source">📚 中国成人体重判定标准（WS/T 428-2013）</div>
+</div>
+<div class="calc-card-body">
+<div class="calc-form-grid">
+<div class="calc-field"><label>身高 (cm)</label><input type="number" id="bmi_height" value="170" min="50" max="250"></div>
+<div class="calc-field"><label>体重 (kg)</label><input type="number" id="bmi_weight" value="65" min="1" max="300"></div>
+</div>
+<div class="calc-action-bar"><button class="btn btn-primary" onclick="calcBMI()">⚡ 计算 BMI</button></div>
+<div class="calc-result-box" id="res_bmi" style="display:none"></div>
+</div>
+</div>
+
+<div class="calc-card">
+<div class="calc-card-header">
+<div><span>产科</span> <b>孕周与预产期计算</b></div>
+<div class="calc-source">📚 Naegele 法（280天）</div>
+</div>
+<div class="calc-card-body">
+<div class="calc-form-grid">
+<div class="calc-field"><label>末次月经 LMP</label><input type="date" id="preg_lmp"></div>
+<div class="calc-field"><label>评估日期（留空为今天）</label><input type="date" id="preg_on"></div>
+</div>
+<div class="calc-action-bar"><button class="btn btn-primary" onclick="calcPreg()">⚡ 计算孕周/预产期</button></div>
+<div class="calc-result-box" id="res_preg" style="display:none"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- ===== AI助手 Panel ===== -->
+<div class="tab-panel" id="panel-aiChat">
+<div class="ai-container">
+<div class="ai-hero">
+<h2>🤖 AI 智能助手与临床提示词引擎</h2>
+<p>一键提炼当前病历，智能对接主流 AI 语言大模型开展质控、鉴别诊断与病程生成</p>
+</div>
+
+<div style="max-width:600px;margin:0 auto 25px">
+<div class="ai-step"><div class="ai-step-num">1</div><div class="ai-step-text">左侧选择科室与疾病，点击疾病即自动填充基础文书</div></div>
+<div class="ai-step"><div class="ai-step-num">2</div><div class="ai-step-text">在下方快捷工具区点击生成专属 <strong>AI Prompt 提示词</strong> 预设</div></div>
+<div class="ai-step"><div class="ai-step-num">3</div><div class="ai-step-text">选择要使用的 AI 对话平台打开窗口，黏贴剪贴板内容即可开始对话</div></div>
+</div>
+
+<div class="ai-section-title">🌐 选择AI平台</div>
+<div class="ai-grid">
+<a class="ai-card" onclick="openAI('deepseek')" title="DeepSeek">
+<div class="ai-icon" style="background:#ecfeff">🧠</div>
+<div><div class="ai-name">DeepSeek</div><div class="ai-desc">高性价比AI，擅长医学推理与鉴别诊断分析</div></div>
+</a>
+<a class="ai-card" onclick="openAI('kimi')" title="Kimi">
+<div class="ai-icon" style="background:#fef3c7">🌙</div>
+<div><div class="ai-name">Kimi（月之暗面）</div><div class="ai-desc">支持超长文本，适合完整病历分析</div></div>
+</a>
+<a class="ai-card" onclick="openAI('chatglm')" title="智谱清言">
+<div class="ai-icon" style="background:#d1fae5">💫</div>
+<div><div class="ai-name">智谱清言</div><div class="ai-desc">清华大学AI助手，中文理解能力强</div></div>
+</a>
+<a class="ai-card" onclick="openAI('tongyi')" title="通义千问">
+<div class="ai-icon" style="background:#fce7f3">🌟</div>
+<div><div class="ai-name">通义千问</div><div class="ai-desc">阿里云AI助手，知识面广</div></div>
+</a>
+</div>
+
+<div class="ai-section-title">🛠️ 快捷生成与复制工具</div>
+<div class="ai-tools">
+<div class="tool-item" onclick="fillAiPrompt('fixTemplate')">🔧 模板质控与规范化重写</div>
+<div class="tool-item" onclick="fillAiPrompt('firstCourse')">📝 首次病程生成提示词</div>
+<div class="tool-item" onclick="fillAiPrompt('differential')">🔍 鉴别诊断推导提示词</div>
+<div class="tool-item" onclick="fillAiPrompt('discharge')">📤 出院记录与带药指导</div>
+<div class="tool-item" onclick="fillAiPrompt('pathway')">📊 临床路径制定</div>
+<div class="tool-item" onclick="copyRecordForAI()">📋 复制全套病历纯文本</div>
+</div>
+
+<div class="ai-prompt-box">
+<div class="ai-section-title">✏️ AI Prompt 提示词展示与编辑</div>
+<textarea id="aiPromptInput" placeholder="在此生成或编辑您的 AI 提示词..."></textarea>
+<div class="ai-prompt-actions">
+<button class="btn btn-outline" onclick="clearPrompt()">🗑️ 清空</button>
+<button class="btn btn-primary" onclick="copyAiPrompt()">📋 一键复制提示词</button>
+</div>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+
+<!-- 复制成功提示浮层 -->
+<div class="ai-copied-toast" id="aiToast">✅ 已复制到剪贴板！</div>
+<div class="ai-copied-toast" id="aiCopiedToast">📋 AI 提示词已成功复制！</div>
+
+<!-- 脚本引入解耦核心链条 -->
+<script src="js/data/db.js"></script>
+<script src="js/data/departments.js"></script>
+<script src="js/data/surgery.js"></script>
+<script src="js/data/internal.js"></script>
+<script src="js/data/obgyn.js"></script>
+<script src="js/data/pedia.js"></script>
+<script src="js/data/pe_negative_signs.js"></script>
+<script src="js/modules/calc_core.js"></script>
+<script src="js/modules/calculators.js"></script>
+<script src="js/modules/ai_chat.js"></script>
+<script src="js/modules/pe_engine.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

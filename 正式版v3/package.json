@@ -1,0 +1,9 @@
+{
+  "name": "medical-record-bus",
+  "version": "1.0.0",
+  "private": true,
+  "description": "外科宝宝病历巴士 - 病历书写辅助工具",
+  "scripts": {
+    "test": "node tests/calculators.test.js"
+  }
+}
