@@ -431,12 +431,14 @@ function initAutoSave(){
     }
 }
 
-// 四套主题：白昼清爽 / 宝宝粉 / 护眼绿 / 护眼夜间，点击按钮循环切换
+// 六套主题：白昼清爽 / 宝宝粉 / 护眼绿 / 护眼夜间 / 梦幻紫 / 暖阳橙，点击按钮循环切换
 const THEME_LIST = [
     { id: 'light', label: '☀️ 白昼清爽', toast: '已切换至白昼清爽模式' },
     { id: 'pink',  label: '🌸 宝宝粉',   toast: '🌸 已切换至宝宝粉模式' },
     { id: 'green', label: '🌿 护眼绿',   toast: '🌿 已切换至护眼绿模式' },
-    { id: 'dark',  label: '🌙 护眼夜间', toast: '🌙 已切换至护眼夜间模式' }
+    { id: 'dark',  label: '🌙 护眼夜间', toast: '🌙 已切换至护眼夜间模式' },
+    { id: 'purple',label: '💜 梦幻紫',   toast: '💜 已切换至梦幻紫模式' },
+    { id: 'orange',label: '🧡 暖阳橙',   toast: '🧡 已切换至暖阳橙模式' }
 ];
 
 function initTheme(){

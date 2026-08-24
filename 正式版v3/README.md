@@ -8,10 +8,12 @@
 
 ### 最近更新
 
+- **清理历史遗留**：移除根目录临时审计脚本（_audit*/_check_internal.js）、scripts/ 一次性数据迁移/修复产物及 js/data/pe_negative_signs.js 死代码（NEGATIVE_SIGNS_DB 无任何运行时引用）
 - **模板扩充**：妇产科由 4 → 16 个模板（产科 5、妇科肿瘤 6、妇科急症 3、普通妇科 2），儿科由 4 → 7 个模板（呼吸 2、消化 1、感染 1、新生儿 1、免疫 1、神经 1）
 - **现病史质量优化**：体表肿物分组 5 个模板（表皮样囊肿、脂肪瘤、纤维瘤、色素痣、血管瘤）及骨科分组 8 个模板（桡骨远端骨折、锁骨骨折、胫骨骨折、肱骨骨折、肱骨髁上骨折、肩关节脱位、踝关节骨折、膝关节半月板损伤）的 presentIllness 按临床书写规范扩充至 200-260 字，firstCourse 现病史段落同步更新
 - **计算引擎统一**：calculators.js 中 FIB-4 / APRI 已接入 CalcCore 纯函数内核
 - **DISEASE_GROUPS 同步**：departments.js 各科室疾病分组已与模板清单 100% 对齐
+- **README 与代码同步**：主题系统扩展为六套（新增梦幻紫/暖阳橙），补充 intro.js 开场动画模块与 app.js 函数索引
 
 ---
 
@@ -56,12 +58,15 @@
     │ calculators  │  ai_chat.js  │  pe_engine.js  │
     │ calc_core.js │              │ (阳性发现整合)  │
     ├──────────────┴──────────────┴────────────────┤
+    │           开场叙事模块 (Intro)                │
+    │  intro.js — 生命律动心电图开场页              │
+    ├─────────────────────────────────────────────┤
     │              数据总线层 (Data Bus)            │
     │  js/data/db.js — MedicalDB 单例              │
     ├─────────────────────────────────────────────┤
     │              数据层 (Data Files)              │
     │  departments.js surgery.js internal.js       │
-    │  obgyn.js pedia.js pe_negative_signs.js      │
+    │  obgyn.js pedia.js                           │
     └─────────────────────────────────────────────┘
 
 ### 七大功能 Tab 面板
@@ -84,34 +89,26 @@
     ├── index.html                   # 前端主入口 DOM 页面（纯 UI 骨架，无业务数据）
     ├── README.md                    # 本维护手册
     ├── css/
-    │   └── style.css                # 全局 UI 样式、CSS 变量、日间/夜间双主题、打印样式
+    │   └── style.css                # 全局 UI 样式、CSS 变量、六套主题、打印样式
     ├── js/
     │   ├── app.js                   # 【主控层】页面核心调度器
     │   ├── data/                    # 【数据层】独立静态数据模块（仅运行时文件）
     │   │   ├── db.js                # MedicalDB 全局数据总线与 NORMAL_PE 标准体检模板
     │   │   ├── departments.js       # DEPARTMENT_CONFIGS 科室元数据 + DISEASE_GROUPS 二级分类
     │   │   ├── surgery.js           # 外科疾病模板（84 个）与临床路径
-    │   │   ├── internal.js          # 内科疾病模板（43 个）与临床路径
+    │   │   ├── internal.js          # 内科疾病模板（63 个）与临床路径
     │   │   ├── obgyn.js             # 妇产科疾病模板（16 个）与临床路径
-    │   │   ├── pedia.js             # 儿科疾病模板（7 个）与临床路径
-    │   │   └── pe_negative_signs.js # [历史保留] NEGATIVE_SIGNS_DB 阴性体征库（运行时不再读取）
+    │   │   └── pedia.js             # 儿科疾病模板（7 个）与临床路径
     │   └── modules/                 # 【模块层】功能控制脚本
     │       ├── calc_core.js         # 临床计算核心公式（纯函数，供计算器与单元测试复用）
     │       ├── calculators.js       # 28 种临床计算器 + 3 种 A4 打印报告
     │       ├── ai_chat.js           # AI 大模型对话 Prompt 提炼与快捷工具
-    │       └── pe_engine.js         # 体格检查智能推导引擎（阳性发现整合）
-    ├── scripts/                     # 【辅助】一次性数据迁移/修复脚本与产出，不参与运行时加载
-    │   ├── generate_configs.js      # 批量生成 peConfig 工具脚本
-    │   ├── update_internal.js / update_pedia.js / update_pedia2.js / update_diseases.js # 批量更新脚本
-    │   ├── patch_internal.js / patch_internal.py # 内科模板补丁
-    │   ├── obgyn_script.py / script.py           # 妇产科脚本
-    │   ├── fix_surgery.js / process_surgery.js / debug_surgery.js # 外科脚本
-    │   ├── extract.js               # [遗留] 疾病名称提取（未维护）
-    │   └── *.json                   # 调试/更新数据产出
+    │       ├── pe_engine.js         # 体格检查智能推导引擎（阳性发现整合）
+    │       └── intro.js             # 生命律动心电图叙事开场页（会话内播放一次，sessionStorage 记忆）
     └── tests/
         └── calculators.test.js      # 计算核心公式单元测试（node tests/calculators.test.js）
 
-> 注：js/data/ 仅保留运行时数据文件；一次性数据迁移/修复脚本统一集中在根目录 scripts/ 下，不参与运行时加载。
+> 注：js/data/ 仅保留运行时数据文件；历史遗留的一次性数据迁移/修复脚本（原 scripts/ 目录）与临时审计脚本已清理移除，不随项目发布。
 
 ---
 
@@ -119,14 +116,14 @@
 
 ### 3.1 页面加载与初始化流程
 
-index.html 按顺序加载样式和脚本：db.js → departments.js → 科室数据文件 → pe_negative_signs.js → calc_core.js → calculators.js → ai_chat.js → pe_engine.js → app.js。DOM 加载完成后触发 init()：
+index.html 按顺序加载样式和脚本：db.js → departments.js → 科室数据文件 → calc_core.js → calculators.js → ai_chat.js → pe_engine.js → intro.js → app.js。DOM 加载完成后触发 init()：
 
 1. 设置默认日期（入院日期、记录日期、GCS/Caprini/Padua 评估日期）
 2. renderDeptList() 渲染科室按钮
 3. loadDiseaseList() 渲染疾病列表
 4. updateHeaderCounts() 更新模板/路径统计
 5. initAutoSave() 初始化草稿自动保存
-6. initTheme() 初始化日/夜间主题
+6. initTheme() 初始化主题
 
 ### 3.2 核心用户操作数据流
 
@@ -305,7 +302,7 @@ AI 平台（app.js openAI）：DeepSeek、Kimi、智谱清言、通义千问。
 
 ### 9.2 核心函数索引
 
-init、renderDeptList、selectDept、loadDiseaseList、searchDisease、selectDisease、fillTemplate、switchTab、syncDatesToCourse、fillNormalPE、fillNormalVitals、regeneratePE、renderPathway、openAI、showToast、copyToClipboard、collectAllRecordText、copyRecordForAI、copyWithPrompt、copyWithCustomPrompt、clearPrompt、saveDraft、initAutoSave、initTheme、toggleTheme。
+init、renderDeptList、updateHeaderCounts、selectDept、loadDiseaseList、searchDisease、selectDisease、fillTemplate、switchTab、syncDatesToCourse、fillNormalPE、fillNormalVitals、regeneratePE、toggleAutoPE、renderPathway、cpSection、openAI、showToast、copyToClipboard、fallbackCopy、collectAllRecordText、collectFormData、copyRecordForAI、copyWithPrompt、copyWithCustomPrompt、clearPrompt、saveDraft、initAutoSave、initTheme、updateThemeBtnLabel、toggleTheme。
 
 ### 9.3 草稿自动保存
 
@@ -315,7 +312,7 @@ init、renderDeptList、selectDept、loadDiseaseList、searchDisease、selectDis
 
 ### 9.4 主题切换
 
-- 存储键：magic_medical_theme（light / dark）
+- 存储键：magic_medical_theme（light / pink / green / dark / purple / orange）
 - 应用方式：document.documentElement.setAttribute('data-theme', theme)
 - 默认跟随系统 prefers-color-scheme
 
@@ -330,9 +327,9 @@ renderPathway(cp) 将 t.cp 渲染为 12 个 section + 日程表；空字段跳�
 位于 css/style.css。
 
 - CSS 变量集中在 :root（颜色、圆角、阴影、字体）
-- 四套主题：白昼清爽（light，默认）/ 宝宝粉（pink）/ 护眼绿（green）/ 护眼夜间（dark）
-- 主题通过 html[data-theme="light|pink|green|dark"] 属性切换，pink/green 仅覆盖 CSS 变量及少量组件背景，dark 另有组件级深度适配
-- 主题按钮循环切换顺序：light → pink → green → dark → light，当前主题显示于按钮标签，持久化于 localStorage（magic_medical_theme）
+- 六套主题：白昼清爽（light，默认）/ 宝宝粉（pink）/ 护眼绿（green）/ 护眼夜间（dark）/ 梦幻紫（purple）/ 暖阳橙（orange）
+- 主题通过 html[data-theme="light|pink|green|dark|purple|orange"] 属性切换，pink/green/purple/orange 仅覆盖 CSS 变量及少量组件背景，dark 另有组件级深度适配
+- 主题按钮循环切换顺序：light → pink → green → dark → purple → orange → light，当前主题显示于按钮标签，持久化于 localStorage（magic_medical_theme）
 - 默认跟随系统 prefers-color-scheme（仅决定 light/dark）
 - @media print 提供病历、临床路径、AI 面板的打印优化
 - 头部蛇杖 logo 为内联 SVG + CSS 动画（orbPulse / snakeStream / tongueFlick / staffFloat）
@@ -385,7 +382,6 @@ renderPathway(cp) 将 t.cp 渲染为 12 个 section + 日程表；空字段跳�
 1. 严禁将模板静态文本写回 index.html；所有静态数据必须放在 js/data/
 2. 严禁删除已有 Schema 字段（cp、t 等）；peConfig 保留向后兼容
 3. 严禁修改 MedicalDB 的 API 签名，除非同步更新全部调用方
-4. 严禁删除 pe_negative_signs.js
 
 ### 12.2 病历一致性铁律
 
@@ -430,4 +426,14 @@ renderPathway(cp) 将 t.cp 渲染为 12 个 section + 日程表；空字段跳�
 
 ---
 
-*最后更新：2026-08-15*
+## 14. 部署到 GitHub Pages
+
+本项目为纯静态站点，推荐使用 GitHub Pages 自动部署，无需服务器。
+
+- 推送 `main` 分支即触发 `.github/workflows/` 下的发布工作流，自动构建并发布到 GitHub Pages。
+- 部署使用 GitHub 自带的 `GITHUB_TOKEN`，无需配置任何个人访问令牌。
+- 站点地址由「用户名 + 仓库名」决定，保持仓库名不变即可维持原有网址不变。
+
+---
+
+*最后更新：2026-08-24*

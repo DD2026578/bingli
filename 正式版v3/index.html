@@ -8,6 +8,64 @@
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+<!-- ===== 生命律动 心电图叙事开场页 (magic intro) ===== -->
+<div class="magic-intro" id="magicIntro" role="dialog" aria-label="欢迎">
+<div class="mi-aurora" aria-hidden="true"><i class="mi-aur-a"></i><i class="mi-aur-b"></i></div>
+<div class="mi-vignette" aria-hidden="true"></div>
+<svg class="mi-ecg" viewBox="0 0 1200 200" preserveAspectRatio="none" aria-hidden="true">
+<path class="mi-ecg-path" d="M0,100 L455,100 C470,100 478,86 495,86 C512,86 520,100 535,100 L560,100 L574,110 L600,4 L626,118 L644,100 L668,100 C682,100 690,80 706,80 C722,80 730,100 746,100 L1200,100"/>
+</svg>
+<div class="mi-flash" aria-hidden="true"></div>
+<div class="mi-content">
+<div class="mi-emblem" aria-hidden="true">
+<div class="mi-emblem-inner">
+<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<linearGradient id="miStaffGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+<stop offset="0%" stop-color="#b45309"/><stop offset="50%" stop-color="#a34a0c"/><stop offset="100%" stop-color="#92400e"/>
+</linearGradient>
+<linearGradient id="miSnakeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+<stop offset="0%" stop-color="#0f766e"/><stop offset="50%" stop-color="#0a6a5a"/><stop offset="100%" stop-color="#065f46"/>
+</linearGradient>
+<radialGradient id="miGlowGrad" cx="50%" cy="50%" r="50%">
+<stop offset="0%" stop-color="#ccf5ff" stop-opacity="0.55"/><stop offset="100%" stop-color="#22d3ee" stop-opacity="0"/>
+</radialGradient>
+<filter id="miGlowEffect" x="-30%" y="-30%" width="160%" height="160%">
+<feGaussianBlur stdDeviation="1.8" result="blur"/><feComposite in="SourceGraphic" in2="blur" operator="over"/>
+</filter>
+</defs>
+<circle class="mi-orb-glow" cx="32" cy="12" r="9" fill="url(#miGlowGrad)"/>
+<circle class="mi-orb-core" cx="32" cy="12" r="4.5" fill="#e3f6fb" filter="url(#miGlowEffect)"/>
+<rect x="30.5" y="14" width="3" height="43" rx="1.5" fill="url(#miStaffGrad)"/>
+<path d="M28 55H36L34 58H30L28 55Z" fill="url(#miStaffGrad)"/>
+<path d="M27 16H37V18H27V16Z" fill="url(#miStaffGrad)"/>
+<path d="M 27 50 C 20 44, 21 38, 32 34 C 43 30, 43 23, 32 20 C 23 17, 24 13, 32 13" stroke="#064E3B" stroke-width="4.5" stroke-linecap="round" fill="none" opacity="0.35"/>
+<path d="M 27 50 C 20 44, 21 38, 32 34 C 43 30, 43 23, 32 20 C 23 17, 24 13, 32 13" stroke="url(#miSnakeGrad)" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+<path class="mi-snake-flow" d="M 27 50 C 20 44, 21 38, 32 34 C 43 30, 43 23, 32 20 C 23 17, 24 13, 32 13" stroke="#ECFDF5" stroke-width="1.6" stroke-linecap="round" fill="none" stroke-dasharray="6 10"/>
+<g>
+<path d="M32 13 C33.5 11.2, 36.5 11, 37.5 12.8 C38.5 14.5, 36.8 16.5, 34 16.8 Z" fill="url(#miSnakeGrad)"/>
+<circle cx="35.5" cy="13.2" r="0.8" fill="#FEF08A"/>
+<path class="mi-snake-tongue" d="M37.2 12.5 L39.5 11.5 M39.5 11.5 L41 11 M39.5 11.5 L41 12.5" stroke="#EF4444" stroke-width="0.8" stroke-linecap="round"/>
+</g>
+</svg>
+</div>
+</div>
+<h1 class="mi-title">外科宝宝病历巴士</h1>
+<p class="mi-en">CLINICAL RECORD SYSTEM</p>
+<p class="mi-sub">完整入院 · 首次病程 · 日常病程 · 出院记录 · 临床路径 · 临床计算器 · AI 智能分析</p>
+<button class="mi-start" id="magicStart" type="button">进入系统</button>
+</div>
+<div class="mi-hud" aria-hidden="true">
+<svg class="mi-hud-ecg" viewBox="0 0 96 28" fill="none">
+<path class="mi-hud-track" d="M0,17 L14,17 L18,15 L21,5 L24,25 L27,17 L40,17 L44,13 L48,17 L62,17 L65,5 L68,25 L71,17 L96,17"/>
+<path class="mi-hud-sweep" d="M0,17 L14,17 L18,15 L21,5 L24,25 L27,17 L40,17 L44,13 L48,17 L62,17 L65,5 L68,25 L71,17 L96,17"/>
+</svg>
+<div class="mi-hud-text">HR <b class="mi-bpm" id="miBpm">0</b> BPM</div>
+<span class="mi-hud-dot" id="miHudDot"></span>
+</div>
+<div class="mi-skip" aria-hidden="true">点击任意处跳过</div>
+</div>
+
 <div class="header">
 <div class="header-inner">
 <div class="header-logo" title="外科宝宝病历巴士">
@@ -52,7 +110,7 @@
 <p>完整入院记录 · 首次病程 · 日常病程 · 出院记录 · 临床路径 · 临床计算器 · AI智能分析</p>
 </div>
 <div class="header-badge">
-<button id="themeToggleBtn" class="theme-toggle-btn" onclick="toggleTheme()" title="点击切换主题：白昼清爽 → 宝宝粉 → 护眼绿 → 护眼夜间">
+<button id="themeToggleBtn" class="theme-toggle-btn" onclick="toggleTheme()" title="点击切换主题：白昼清爽 → 宝宝粉 → 护眼绿 → 护眼夜间 → 梦幻紫 → 暖阳橙">
 <span id="themeBtnLabel">☀️ 白昼清爽</span>
 </button>
 <span class="badge" id="totalDiseaseBadge">多科室模板已加载</span>
@@ -1028,11 +1086,11 @@
 <script src="js/data/internal.js"></script>
 <script src="js/data/obgyn.js"></script>
 <script src="js/data/pedia.js"></script>
-<script src="js/data/pe_negative_signs.js"></script>
 <script src="js/modules/calc_core.js"></script>
 <script src="js/modules/calculators.js"></script>
 <script src="js/modules/ai_chat.js"></script>
 <script src="js/modules/pe_engine.js"></script>
+<script src="js/modules/intro.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
