@@ -152,6 +152,7 @@ function selectDisease(i){
         // 直接填充模板，无需额外点击“应用模板”按钮
         fillTemplate();
     }
+    closeDeptDrawer();
 }
 
 function fillTemplate(){
@@ -473,3 +474,18 @@ function toggleTheme(){
 
 // 页面 DOM 加载完毕后自动初始化
 document.addEventListener('DOMContentLoaded', init);
+
+// 手机端：科室/疾病抽屉开关（桌面端无 .open 类与遮罩，调用无副作用）
+function toggleDeptDrawer(){
+    const p = document.querySelector('.left-panel');
+    const o = document.getElementById('deptDrawerOverlay');
+    if(p) p.classList.toggle('open');
+    if(o) o.classList.toggle('show');
+}
+
+function closeDeptDrawer(){
+    const p = document.querySelector('.left-panel');
+    const o = document.getElementById('deptDrawerOverlay');
+    if(p) p.classList.remove('open');
+    if(o) o.classList.remove('show');
+}

@@ -133,6 +133,7 @@
 <!-- 右侧主控制区域 -->
 <div class="right-panel">
 <div class="toolbar">
+<button class="btn btn-outline dept-drawer-btn" onclick="toggleDeptDrawer()">📋 选科室/疾病</button>
 <button class="btn btn-outline" onclick="toggleAutoPE()">⚙️ 自动填充正常体检</button>
 <button class="btn btn-outline" onclick="fillNormalVitals()">❤️ 填正常体征</button>
 <span id="autoSaveStatus" style="font-size:12px;color:var(--c-text-muted);margin-left:auto;align-self:center;font-weight:500"></span>
@@ -1078,6 +1079,7 @@
 <!-- 复制成功提示浮层 -->
 <div class="ai-copied-toast" id="aiToast">✅ 已复制到剪贴板！</div>
 <div class="ai-copied-toast" id="aiCopiedToast">📋 AI 提示词已成功复制！</div>
+<div class="drawer-overlay" id="deptDrawerOverlay" onclick="closeDeptDrawer()"></div>
 
 <!-- 脚本引入解耦核心链条 -->
 <script src="js/data/db.js"></script>
