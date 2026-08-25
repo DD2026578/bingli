@@ -1,227 +1,112 @@
-# 华医临床系统 · 面向对象 (OOP) 开发与架构手册
+# 🩺 外科宝宝病历巴士 · 临床医生上手指南
 
-> 本手册从面向对象 (OOP) 视角系统性拆解华医系统的核心服务对象。涵盖各对象的**职责边界、封装模式、公有 API 契约、典型调用链及二次开发扩展范式**。
-
----
-
-## 1. 系统对象模型与设计模式
-
-系统采用 **单例模块模式 (Singleton Module Pattern)** 与 **领域服务模式 (Domain Services)**，全局各核心服务解耦独立，接口契约清晰：
-
-```
-                    ┌─────────────────────────┐
-                    │    App (UI Controller)  │
-                    └───────────┬─────────────┘
-                                │ 调度与协作
-        ┌──────────────┬────────┼──────────────┬──────────────┐
-        ▼              ▼        ▼              ▼              ▼
-  ┌───────────┐ ┌───────────┐ ┌──────────┐ ┌─────────────┐ ┌──────────┐
-  │ MedicalDB │ │ PEEngine  │ │ CalcCore │ │DrugAssistant│ │  AIChat  │
-  └───────────┘ └───────────┘ └──────────┘ └─────────────┘ └──────────┘
-  [数据仓储单例] [智能推理引擎] [算法纯函数] [业务交互代理]  [提示词引擎]
-```
+> **💡 这是一份给临床医生准备的使用说明**  
+> 本网页是一个**“开箱即用”的临床素材与病历智库**。无需安装复杂软件，打开网页即可快速查模板、抄病历、算评分、查用药。所有数据都在您的浏览器本地处理，安全快捷。
 
 ---
 
-## 2. 核心对象速查与 API 契约
+## ⚡ 30 秒快速上手（最常用流程）
 
-### 2.1 MedicalDB (临床数据仓储总线)
-- **定位**：科室配置、病历模板、亚专科分组及临床路径的统一数据总线（仓储单例）。
-- **对象访问**：`window.MedicalDB`
-
-#### 公有方法 (Public Methods)
-| 方法签名 | 返回类型 | 说明 |
-| :--- | :--- | :--- |
-| `registerDepartment(deptConfig, diseaseList, groups)` | `void` | 注册/更新科室元数据、疾病列表与亚专科分组 |
-| `getDepartments()` | `Array<DeptConfig>` | 获取所有已注册科室清单 |
-| `getDiseasesByDept(deptId)` | `Array<DiseaseItem>` | 按科室 ID 获取疾病模板集合 |
-| `getDiseaseGroupsByDept(deptId)` | `Array<Group> \| null` | 获取科室所属的亚专科分组配置 |
-| `getTemplate(deptId, index)` | `DiseaseItem \| null` | 获取指定科室及索引处的完整模板对象 |
-| `getStatistics()` | `{ totalDiseases, totalCps }` | 获取全系统模板与临床路径总数统计 |
-| `getNormalPE()` | `string` | 获取全局共享的标准体格检查模板底稿 |
-
-#### 调用示例 (Usage)
-```javascript
-// 1. 查询所有科室
-const depts = window.MedicalDB.getDepartments();
-
-// 2. 获取普外科第 1 个疾病模板
-const disease = window.MedicalDB.getTemplate('surgery', 0);
-console.log(disease.name, disease.icd, disease.t.chiefComplaint);
 ```
+[1. 选科室] ➔ [2. 选疾病/搜拼音] ➔ [3. 一键出齐整套病历] ➔ [4. 复制/微调使用]
+```
+
+1. **进入页面**：点击开场动画中心的 **【进入系统】** 按钮。
+2. **选择科室**：在左侧栏点击对应科室（外科 / 内科 / 妇产科 / 儿科）。
+3. **选择疾病**：
+   - 可以在疾病列表中直接点击。
+   - 也可以在上方搜索框输入 **疾病中文** 或 **拼音首字母**（例如搜索“急性阑尾炎”直接输 `jxlwy`）。
+4. **自动生成**：点击疾病后，右侧会自动填充规范的 **入院记录、首次病程、日常病程、出院记录、专科查体及临床路径**。
 
 ---
 
-### 2.2 PEEngine (体格检查与病程智能推导引擎)
-- **定位**：专科阳性体征识别、全身体查融合消解与首次病程记录同步的智能推理引擎。
-- **对象访问**：`window.PEEngine`
+## 📑 核心功能手把手教程
 
-#### 公有方法 (Public Methods)
-| 方法签名 | 说明 |
-| :--- | :--- |
-| `applySmartPE(deptId, diseaseIdx)` | 主入口：读取生命体征与专科检查，执行体查冲突消解与首次病程自动同步 |
-| `_deconflictPE(basePE, specialistText, hr, diseaseItem)` | 核心推理：将专科阳性体征无缝合并入全身体格检查对应系统 |
-| `_generateCondensedPE(admissionPE, diseaseItem)` | 规范精炼：依临床规范生成精简版首次病程体格检查文本（保留阳性发现与相关系统） |
-| `_classifyDiseaseSystem(name, deptId)` | 分类器：根据疾病名称与亚专科推导归属器官系统（respiratory, abdominal, cardiac 等） |
-| `_specHasSystemFinding(spec, system)` | 匹配器：子句级检测专科检查文本中特定体系统的阳性体征（排除阴性描述） |
-| `_extractAllClauses(spec, pattern)` | 提取器：从专科检查文本中按标点切分并提取匹配子句（过滤未填占位符） |
-| `_isClauseNegative(c)` | 判定器：判断单个子句是否为阴性/正常描述（如“无”、“未触及”、“正常”等） |
-| `_needsDeconfliction(peText, spec, name)` | 检查器：判断当前体检文本是否存在与专科检查矛盾的表述 |
-| `_sentenceHasAbnormal(sentence)` | 判定器：判断句子是否包含阳性/异常体征（非全阴性描述） |
-| `_sentenceMatchesSystem(sentence, system)` | 判定器：判断句子是否匹配指定体系统 |
-| `_syncFirstCourse(tVal, pVal, rVal, bpVal, diseaseItem, specialistResult, admissionPE)` | 同步器：采用多策略模式（标准格式/Pattern A/Pattern B）更新首次病程体查段落 |
-
-#### 调用示例 (Usage)
-```javascript
-// 1. 触发当前病历体格检查智能推理与病程联动
-window.PEEngine.applySmartPE();
-
-// 2. 亦可显式传入指定科室与疾病索引
-window.PEEngine.applySmartPE('surgery', 0);
-```
+### 1. 🏥 规范病历书写（入院 / 首程 / 日常 / 出院）
+- **自动联动**：选定疾病后，系统按三级甲等医院规范，自动填写主诉、现病史、既往史、体格检查、诊断要点等。
+- **切换查看**：在上方标签栏（Tab）自由切换：
+  - 🏥 **入院记录**：标准大病历格式，包含基本信息、现病史及系统查体。
+  - 📝 **首次病程记录**：病例特点、拟诊讨论及诊疗计划一应俱全。
+  - 📅 **日常病程记录**：术前讨论、术后首次病程、术后日常查房记录。
+  - 📤 **出院记录**：出院情况、出院医嘱及带药指导。
+- **修改与使用**：直接在文本框内修改患者实际情况（如具体年龄、发病小时数等），然后使用键盘快捷键 `Ctrl + C`（苹果电脑 `Cmd + C`）复制到医院实际病历系统即可。
+- **自动保存**：您修改的内容浏览器会自动暂存，刷新页面或不小心关掉网页也不会丢失草稿。
 
 ---
 
-### 2.3 CalcCore (临床计算核心算法类)
-- **定位**：无状态 (Stateless) 的纯函数计算引擎，无 DOM 依赖，支持任意环境（Web / Node / 单元测试）。
-- **对象访问**：`window.CalcCore` 或 `globalThis.CalcCore`
-
-#### 公有方法 (Public Methods)
-| 方法签名 | 参数类型 | 返回值 | 临床含义 |
-| :--- | :--- | :--- | :--- |
-| `bmi(weightKg, heightCm)` | `(number, number)` | `number` | 身体质量指数 BMI |
-| `qtcBazett(qtMs, hr)` | `(number, number)` | `number` | 校正 QTc 间期 (ms) |
-| `mapArterial(sbp, dbp)` | `(number, number)` | `number` | 平均动脉压 (mmHg) |
-| `apri(ast, plt)` | `(number, number)` | `number` | 肝纤维化 APRI 评分 |
-| `fib4(age, ast, alt, plt)` | `(number, number, number, number)` | `number` | 肝纤维化 FIB-4 指数 |
-| `sofaScore(params)` | `{ resp, coag, liver, cardiovascular, neuro, renal }` | `number` | 脓毒症 SOFA 评分 (0~24) |
-| `graceScore(params)` | `{ age, hr, sbp, creatinineMg, killip, cardiacArrest, stDeviation, elevatedEnzymes }` | `number` | 急性冠脉综合征 GRACE 危险分层 |
-| `blatchfordScore(params)`| `{ bun, hb, sbp, pulse, gender, melena, syncope, liverDisease, heartFailure }` | `number` | 上消化道出血 GBS 评分 |
-| `nihssScore(items)` | `Array<number>` | `number` | 脑卒中 NIHSS 评分 |
-| `gestationalAge(lmpStr, onDateStr)` | `(string, string)` | `{ weeks, days, edc }` | 孕周与预产期计算 |
-
-#### 调用示例 (Usage)
-```javascript
-// 计算 BMI（注：CalcCore 内部返回高精度浮点原生值，UI 层通常调用 .toFixed(1) 或 .toFixed(2) 进行展示）
-const patientBMI = CalcCore.bmi(70, 175); // => 22.857142857142858 (UI展示: 22.9 或 22.86)
-
-// 计算 SOFA 评分 (0~24)
-const sofa = CalcCore.sofaScore({
-    resp: 2, coag: 1, liver: 0, cardiovascular: 2, neuro: 1, renal: 0
-}); // => 6
-```
+### 2. 🩺 智能查体与一键填充
+病房查体写起来太繁琐？系统内置了智能查体引擎与快捷辅助工具：
+- **⚙️ 自动填充正常体检**（顶部工具栏）：开启/关闭智能查体开关，开启后切换疾病时自动补齐系统查体与专科阳性体征。
+- **❤️ 填正常体征**（顶部工具栏）：一键自动填入标准生命体征：体温（36.5℃）、脉搏（78次/分）、呼吸（18次/分）、血压（120/80mmHg）。
+- **📋 填入正常体检模板**（体格检查栏右上角）：一键生成从头到脚各系统的标准阴性（正常）体检描述。
+- **🔄 重新生成体检**（体格检查栏右上角）：根据当前选定疾病与配置，重新推导专科阳性体征并与系统查体深度融合。
+- **专科阳性体征自动融合**：选择对应疾病后，系统会自动把该专科特有的阳性体征（如阑尾炎的“麦氏点压痛反跳痛”、胆囊炎的“墨菲征阳性”）智能整合到查体中，无需手动逐句拼凑。
 
 ---
 
-### 2.4 DrugAssistant (临床用药决策与交互代理)
-- **定位**：药品多维度检索、分类过滤、详情呈现、用法复制及处方带入的交互控制器。
-- **对象访问**：`window.DrugAssistant`
-
-#### 公有方法 (Public Methods)
-| 方法签名 | 说明 |
-| :--- | :--- |
-| `init()` | 初始化分类列表、药品检索索引与默认展示卡片 |
-| `selectCategory(catId)` | 切换当前药品大类（如 'all', 'anti_infective', 'cardiovascular', 'respiratory', 'digestive', 'endocrine', 'analgesic', 'emergency', 'neuro'） |
-| `onSearch(query)` | 触发关键词实时检索（支持名称、拼音、适应症、标签多维匹配） |
-| `selectDrug(drugId)` | 激活指定药品卡片并渲染配伍禁忌与全维度用药详情（如真实药品 ID 'd_001', 'd_006'） |
-| `copyUsage(drugId)` | 格式化并快速复制药品用法用量至系统剪贴板 |
-| `insertToDischarge(drugId)` | 将药品用法格式化追加至出院记录的“出院带药”区域 |
-
-#### 调用示例 (Usage)
-```javascript
-// 切换至心血管系统分类 (cardiovascular) 并检索阿司匹林
-DrugAssistant.selectCategory('cardiovascular');
-DrugAssistant.onSearch('阿司匹林');
-DrugAssistant.selectDrug('d_006'); // 选中阿司匹林肠溶片 (d_006)
-```
+### 3. 📊 临床路径一览
+- 点击 **【📊 临床路径】** 标签。
+- 清楚展示该疾病从 **入院第1天（接诊检查）➔ 术前/治疗期 ➔ 术后/恢复期 ➔ 出院日** 的完整诊疗流程、重点医嘱、检查项目与出院标准。
+- 方便管床医生和实习/规培医生快速理清每日诊疗重点。
 
 ---
 
-### 2.5 AIChat (临床 AI 提示词推导对象)
-- **定位**：提取当前病历上下文（主诉、现病史、诊断、辅助检查），依据六大临床场景生成结构化 Prompt。
-- **对象暴露**：全局辅助函数/命名空间
-
-#### 公有方法 (Public Methods)
-| 方法签名 | 说明 |
-| :--- | :--- |
-| `fillAiPrompt(toolType)` | 根据场景提取病历数据并注入 Prompt，可选场景：`firstCourse`（首次病程）、`fixTemplate`（病历质控）、`differential`（鉴别诊断）、`discharge`（出院记录）、`pathway`（临床路径）、`calculator`（指标量表） |
-| `copyAiPrompt()` | 复制生成的专业临床 Prompt 到剪贴板供接入 LLM 推理 |
-
-#### 调用示例 (Usage)
-```javascript
-// 一键生成当前疾病的“鉴别诊断推导”提示词
-fillAiPrompt('differential');
-copyAiPrompt();
-```
-
----
-
-## 3. 二次开发与扩展指南 (Extensibility)
-
-### 3.1 扩展新科室与疾病模板 (扩展 MedicalDB)
-通过 `MedicalDB.registerDepartment` 挂载新数据模块：
-
-```javascript
-// my_new_dept.js
-(function() {
-    const deptConfig = {
-        id: 'ent',
-        name: '耳鼻喉科',
-        icon: '👂'
-    };
-
-    const diseaseList = [
-        {
-            name: '慢性化脓性中耳炎',
-            icd: 'H66.300',
-            t: {
-                chiefComplaint: '左耳反复流脓伴听力下降5年，加重1周。',
-                presentIllness: '患者5年前无明显诱因出现左耳间歇性流脓...',
-                specialistExam: '左侧外耳道内见脓性分泌物，鼓膜紧张部中央性穿孔...',
-                admitDiagnosis: '慢性化脓性中耳炎（左耳）',
-                treatmentPlan: '1. 完善耳部CT；2. 局部清洁抗炎；3. 择期行鼓室成形术。',
-                firstCourse: '...',
-                discharge: '...',
-                cp: null // 可选临床路径配置
-            }
-        }
-    ];
-
-    const groups = [
-        { group: '耳科疾病', items: ['慢性化脓性中耳炎'] }
-    ];
-
-    if (window.MedicalDB) {
-        window.MedicalDB.registerDepartment(deptConfig, diseaseList, groups);
-    }
-})();
-```
-
-### 3.2 扩展新临床计算器 (扩展 CalcCore)
-直接在 `CalcCore` 纯函数对象上挂载新算法：
-
-```javascript
-// 扩展肾小球滤过率 (eGFR-CKD-EPI) 计算公式
-CalcCore.egfrCkdEpi = function(scr, age, gender) {
-    if (!scr || !age) return NaN;
-    const isFemale = gender === 'female';
-    const k = isFemale ? 0.7 : 0.9;
-    const a = isFemale ? -0.329 : -0.411;
-    const minVal = Math.min(scr / k, 1);
-    const maxVal = Math.max(scr / k, 1);
-    let egfr = 141 * Math.pow(minVal, a) * Math.pow(maxVal, -1.209) * Math.pow(0.9929, age);
-    if (isFemale) egfr *= 1.018;
-    return Math.round(egfr * 10) / 10;
-};
-```
-
-### 3.3 扩展专科系统识别与体查推导 (扩展 PEEngine)
-若添加了新专科系统（如耳鼻喉），只需在 `classifyDiseaseSystem` 与 `sentenceMatchesSystem` 中追加匹配规则与正则映射。
+### 4. 🧮 临床计算器与报告打印（支持 A4 打印）
+点击 **【🧮 临床计算器】** 标签，内置 28 种临床常用评分与计算公式，并严格对齐 7 大专科分类：
+- **7 大临床分类快速切换**：
+  - 🏥 **肾脏、代谢与体征**：肌酐清除率 (Ccr) 与 eGFR (CKD-EPI) 肾小球滤过率、体表面积 (BSA, 许文生/DuBois公式)、校正血钙 (Corrected Calcium)、阴离子隙 (AG) 与缺钠/补钠量计算。
+  - 🩺 **肝胆与消化系统**：Child-Pugh 肝功能分级、FIB-4 指数 & APRI 肝纤维化无创评分、MELD 终末期肝病模型评分、Glasgow-Blatchford 上消化道出血风险评分。
+  - 🫁 **呼吸重症与血管急症**：CURB-65 社区获得性肺炎评分、Wells 下肢深静脉血栓 (DVT) 风险评分、Wells 肺栓塞 (PE) 临床概率评分。
+  - 🚑 **外科烧伤与儿科**：中国九分法烧伤面积与第1个 24h 补液复苏计算、小儿标准体重估算与脱水补液张力推算。
+  - 🧠 **神经与意识评估**：GCS 格拉斯哥昏迷评分（支持 A4 打印）、Hunt-Hess 蛛网膜下腔出血分级、Caprini 围手术期静脉血栓风险评分（支持 A4 打印）、Padua 内科静脉血栓风险评分（支持 A4 打印）、NIHSS 卒中量表。
+  - ❤️ **心血管与急重症评分**：CHA₂DS₂-VASc 房颤抗凝评分、qSOFA 快速脓毒症评分、MEWS 改良早期预警评分、TIMI 心绞痛/非ST段抬高心梗风险评分、QTc 校正QT间期（Bazett）、平均动脉压 (MAP)、SOFA 序贯器官衰竭评分、GRACE ACS 风险评分。
+  - 🧬 **通用与妇产**：BMI 体重指数（中国成人标准）、孕周与预产期计算（Naegele 法）。
+- **🖨️ A4 临床评估单打印（支持 GCS、Caprini、Padua 等）**：
+  1. 录入患者基本信息（姓名、性别、年龄、床号、住院号、科室及评估日期）。
+  2. 勾选或评定患者危险因素与临床体征。
+  3. 点击 **【⚡ 计算评分】** 查看风险分级与诊疗预防建议，或点击 **【📋 复制结果至病历】** 快速贴入病程记录。
+  4. 点击 **【🖨️ 打印评估结果】**，系统会自动排版成标准 A4 临床评估单，直接连接打印机或保存为 PDF 归档入病历。
 
 ---
 
-## 4. 最佳实践与规范
+### 5. 💊 临床用药助手与配伍速查
+点击 **【💊 用药助手】** 标签：
+- **多维度极速查药**：
+  - 在搜索框输入药物名称、商品名或拼音首字母（如查头孢呋辛输 `tbfx`，查阿司匹林输 `aspl`）。
+  - 支持左侧按药物大类（抗感染药、心血管药、消化系统药、镇痛解热、内分泌用药等）快速浏览。
+- **临床关键信息一目了然**：
+  - 包含 **用法用量**、**适应证**、**禁忌与配伍禁忌**。
+  - 标明 **肾功能不全调量指导（按 eGFR 调整）** 与 **妊娠哺乳期安全等级（FDA 分级）**。
 
-1. **坚持纯函数无副作用**：所有数学与评分公式须封装于 `CalcCore`，严禁在计算核心内操作 DOM。
-2. **单一数据流**：病历数据的读写统一通过 `MedicalDB` 接口，避免跨模块直接操作私有闭包变量。
-3. **安全防御性传参**：所有数值计算前统一进行 `Number` 类型与边界校验，防止运行时抛出异常。
+---
+
+### 6. 🤖 AI 对话助手与提示词生成
+点击 **【🤖 AI对话】** 标签：
+- **零门槛使用 AI 辅助临床**：
+  1. **第一步**：选择疾病生成当前病历。
+  2. **第二步**：在快捷工具区点击需要的任务（如 **【🔍 鉴别诊断推导】**、**【🔧 模板质控与规范化重写】**、**【📤 出院记录与带药指导】** 等）。系统会自动提炼当前病历并写好专业的医学提示词。
+  3. **第三步**：点击 **【📋 一键复制提示词】**，再点击上方 AI 平台图标（如 DeepSeek、Kimi、智谱清言、通义千问），在弹出的对话框中直接粘贴发送即可获得深度诊疗建议。
+
+---
+
+## 🎨 贴心小工具
+
+- **☀️ 界面主题切换**：
+  - 点击页面右上角的 **【☀️ 切换主题】** 按钮。
+  - 支持 6 种舒适视觉风格：**白昼清爽**、**宝宝粉**、**护眼绿**（推荐日间查房）、**护眼夜间**（推荐夜班值班）、**梦幻紫**、**暖阳橙**。
+- **📱 手机与平板自适应**：
+  - 无论在医生办公室电脑、护士站电脑，还是查房用的手机、iPad，均可自适应排版。
+  - 移动端点击左上角 **【📋 选科室/疾病】** 可随时调出抽屉菜单。
+
+---
+
+## ❓ 常见问题（FAQ）
+
+**Q1：网页关掉后，我修改的病历草稿会丢吗？**  
+**答：** 不会。系统会在您打字时自动保存在当前浏览器的本地存储中，下次打开依然存在。
+
+**Q2：如何快速把内容复制到医院 HIS / 电子病历系统？**  
+**答：** 点击对应文本框，按键盘 `Ctrl + A`（全选），再按 `Ctrl + C`（复制），切换到医院病历系统 `Ctrl + V`（粘贴）即可。
+
+**Q3：为什么有些体检数据需要微调？**  
+**答：** 系统生成的是规范标准模板。临床实际中，请务必根据患者真实的生命体征、发病天数及专科检查阳性体征进行如实核对与修改。
