@@ -414,31 +414,48 @@ html[data-theme="orange"] .theme-toggle-btn { background:rgba(255,255,255,.2);bo
 .magic-intro{position:fixed;inset:0;z-index:9999;overflow:hidden;display:flex;align-items:center;justify-content:center;
   font-family:var(--font-main);cursor:pointer;-webkit-user-select:none;user-select:none;
   opacity:1;visibility:visible;
-  /* 开场页局部调色（light 默认，各主题在下方覆盖，不污染 :root） */
-  --mi-bg1:#f8fafc;--mi-bg2:#eef2ff;
-  --mi-line:#2563eb;--mi-line-soft:rgba(37,99,235,.3);--mi-line-glow:rgba(37,99,235,.45);
-  --mi-title:#1e3a8a;--mi-en:#64748b;--mi-sub:#475569;
-  --mi-aur1:rgba(59,130,246,.2);--mi-aur2:rgba(6,182,212,.16);
-  --mi-btn:#1d4ed8;--mi-btn-ring:rgba(29,78,216,.35);--mi-btn-ring-hi:rgba(29,78,216,.6);--mi-btn-shadow:rgba(29,78,216,.32);
-  --mi-hud:#64748b;--mi-hud-num:#1e3a8a;--mi-vig:rgba(15,23,42,.15);--mi-flash:rgba(37,99,235,.1);
+  /* 开场页局部调色（暗夜监护舱默认，各主题在下方覆盖，不污染 :root） */
+  --mi-bg1:#05080f;--mi-bg2:#0a0f1e;
+  --mi-line:#dc2626;--mi-line-soft:rgba(220,38,38,.35);--mi-line-glow:rgba(220,38,38,.5);
+  --mi-title:#f1f5f9;--mi-en:#8fb3d9;--mi-sub:#8aa3c0;
+  --mi-aur1:rgba(37,60,110,.2);--mi-aur2:rgba(12,20,40,.16);
+  --mi-btn:#0f2745;--mi-btn-ring:rgba(56,189,248,.35);--mi-btn-ring-hi:rgba(56,189,248,.6);--mi-btn-shadow:rgba(2,8,23,.45);
+  --mi-hud:#5a6c85;--mi-hud-num:#f1f5f9;--mi-vig:rgba(0,0,0,.5);--mi-flash:rgba(220,38,38,.12);
   --mi-ecg-color:#dc2626;--mi-ecg-glow:rgba(220,38,38,.5);--mi-ecg-soft:rgba(220,38,38,.3);--mi-ecg-flash:rgba(220,38,38,.1);
   background:linear-gradient(180deg,var(--mi-bg1),var(--mi-bg2));}
 .magic-intro.play{opacity:1;visibility:visible;transition:opacity .1s ease;}
 .mi-emblem-inner,.mi-title,.mi-en,.mi-sub,.mi-start{opacity:0;}
 
+/* 任何主题下启动页统一为暗夜监护舱底（主界面主题不受影响） */
+html[data-theme]:not([data-theme="dark"]) .magic-intro{--mi-bg1:#05080f;--mi-bg2:#0a0f1e;--mi-title:#f1f5f9;--mi-en:#8fb3d9;--mi-sub:#8aa3c0;--mi-hud:#5a6c85;--mi-vig:rgba(0,0,0,.5);}
+
 /* 每主题调色（遮罩背景/ECG线/标题/按钮主色/极光） */
 html[data-theme="pink"] .magic-intro{--mi-bg1:#fdf2f8;--mi-bg2:#fff1f2;--mi-line:#be185d;--mi-line-soft:rgba(190,24,93,.3);--mi-line-glow:rgba(190,24,93,.42);--mi-title:#9d174d;--mi-en:#b06a86;--mi-sub:#9d5c7e;--mi-aur1:rgba(244,114,182,.2);--mi-aur2:rgba(251,113,133,.15);--mi-btn:#be185d;--mi-btn-ring:rgba(190,24,93,.35);--mi-btn-ring-hi:rgba(190,24,93,.6);--mi-btn-shadow:rgba(190,24,93,.3);--mi-hud:#9d5c7e;--mi-hud-num:#9d174d;--mi-vig:rgba(80,7,36,.14);--mi-flash:rgba(236,72,153,.12);}
 html[data-theme="green"] .magic-intro{--mi-bg1:#f0fdf4;--mi-bg2:#ecfdf5;--mi-line:#15803d;--mi-line-soft:rgba(21,128,61,.3);--mi-line-glow:rgba(21,128,61,.42);--mi-title:#14532d;--mi-en:#58775f;--mi-sub:#44634d;--mi-aur1:rgba(52,211,153,.2);--mi-aur2:rgba(16,185,129,.15);--mi-btn:#166534;--mi-btn-ring:rgba(22,101,52,.35);--mi-btn-ring-hi:rgba(22,101,52,.6);--mi-btn-shadow:rgba(22,101,52,.3);--mi-hud:#5c7463;--mi-hud-num:#14532d;--mi-vig:rgba(6,40,23,.14);--mi-flash:rgba(34,197,94,.12);}
-html[data-theme="dark"] .magic-intro{--mi-bg1:#0b1120;--mi-bg2:#131c31;--mi-line:#38bdf8;--mi-line-soft:rgba(56,189,248,.35);--mi-line-glow:rgba(56,189,248,.45);--mi-title:#f1f5f9;--mi-en:#7dd3fc;--mi-sub:#94a3b8;--mi-aur1:rgba(14,165,233,.18);--mi-aur2:rgba(34,211,238,.16);--mi-btn:#0284c7;--mi-btn-ring:rgba(56,189,248,.4);--mi-btn-ring-hi:rgba(56,189,248,.65);--mi-btn-shadow:rgba(2,132,199,.45);--mi-hud:#94a3b8;--mi-hud-num:#7dd3fc;--mi-vig:rgba(0,0,0,.44);--mi-flash:rgba(56,189,248,.1);}
+html[data-theme="dark"] .magic-intro{--mi-bg1:#05080f;--mi-bg2:#0a0f1e;--mi-line:#38bdf8;--mi-line-soft:rgba(56,189,248,.35);--mi-line-glow:rgba(56,189,248,.45);--mi-title:#f1f5f9;--mi-en:#8fb3d9;--mi-sub:#8aa3c0;--mi-aur1:rgba(37,60,110,.2);--mi-aur2:rgba(12,20,40,.16);--mi-btn:#0284c7;--mi-btn-ring:rgba(56,189,248,.4);--mi-btn-ring-hi:rgba(56,189,248,.65);--mi-btn-shadow:rgba(2,132,199,.45);--mi-hud:#5a6c85;--mi-hud-num:#7dd3fc;--mi-vig:rgba(0,0,0,.44);--mi-flash:rgba(56,189,248,.1);}
 html[data-theme="purple"] .magic-intro{--mi-bg1:#f5f3ff;--mi-bg2:#faf5ff;--mi-line:#7c3aed;--mi-line-soft:rgba(124,58,237,.3);--mi-line-glow:rgba(124,58,237,.42);--mi-title:#4c1d95;--mi-en:#7c6a9e;--mi-sub:#6d5d8f;--mi-aur1:rgba(167,139,250,.2);--mi-aur2:rgba(192,132,252,.15);--mi-btn:#7c3aed;--mi-btn-ring:rgba(124,58,237,.35);--mi-btn-ring-hi:rgba(124,58,237,.6);--mi-btn-shadow:rgba(124,58,237,.3);--mi-hud:#7c6a9e;--mi-hud-num:#4c1d95;--mi-vig:rgba(46,16,101,.14);--mi-flash:rgba(139,92,246,.12);}
 html[data-theme="orange"] .magic-intro{--mi-bg1:#fff7ed;--mi-bg2:#fffbeb;--mi-line:#c2410c;--mi-line-soft:rgba(194,65,12,.3);--mi-line-glow:rgba(194,65,12,.42);--mi-title:#7c2d12;--mi-en:#b45309;--mi-sub:#a16207;--mi-aur1:rgba(251,146,60,.2);--mi-aur2:rgba(251,191,36,.15);--mi-btn:#c2410c;--mi-btn-ring:rgba(194,65,12,.35);--mi-btn-ring-hi:rgba(194,65,12,.6);--mi-btn-shadow:rgba(194,65,12,.3);--mi-hud:#a16207;--mi-hud-num:#7c2d12;--mi-vig:rgba(60,20,0,.15);--mi-flash:rgba(249,115,22,.12);}
+
+/* 暗夜监护舱氛围层：中央光晕 / 透视网格地平线 / 顶部呼吸光带（位于 canvas 之下） */
+.mi-ambient{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:0;}
+.mi-amb-halo{position:absolute;left:50%;top:40%;width:72vmax;height:72vmax;transform:translate(-50%,-50%);border-radius:50%;
+  background:radial-gradient(closest-side,rgba(37,99,235,.16),rgba(37,99,235,.05) 45%,transparent 70%);filter:blur(6px);}
+.mi-amb-grid{position:absolute;left:-20%;right:-20%;bottom:-4%;height:46%;
+  background:linear-gradient(rgba(56,189,248,.0) 0%,rgba(56,189,248,.07) 100%);
+  -webkit-mask-image:linear-gradient(rgba(56,189,248,.1) 0%,transparent 12%,rgba(56,189,248,.08) 13%,transparent 25%,rgba(56,189,248,.06) 26%,transparent 38%,rgba(56,189,248,.05) 39%,transparent 51%,rgba(56,189,248,.04) 52%,transparent 64%,rgba(56,189,248,.03) 65%,transparent 77%,rgba(56,189,248,.02) 78%,transparent 90%);
+  mask-image:linear-gradient(rgba(56,189,248,.1) 0%,transparent 12%,rgba(56,189,248,.08) 13%,transparent 25%,rgba(56,189,248,.06) 26%,transparent 38%,rgba(56,189,248,.05) 39%,transparent 51%,rgba(56,189,248,.04) 52%,transparent 64%,rgba(56,189,248,.03) 65%,transparent 77%,rgba(56,189,248,.02) 78%,transparent 90%);
+  mask-size:100% 100%;-webkit-mask-size:100% 100%;}
+.mi-amb-beam{position:absolute;left:50%;top:0;width:38vmax;height:2px;transform:translateX(-50%);
+  background:linear-gradient(90deg,transparent,rgba(56,189,248,.5),transparent);filter:blur(1px);opacity:.5;}
+.magic-intro.play .mi-amb-beam{animation:mi-beam-breathe 4.2s ease-in-out infinite;}
+@keyframes mi-beam-breathe{0%,100%{opacity:.18}50%{opacity:.55}}
 
 /* 极光色块：外层承载鼠标视差，内层极缓漂移 */
 .mi-aurora{position:absolute;inset:0;pointer-events:none;will-change:transform;}
 .mi-aur-a{position:absolute;width:74vmax;height:58vmax;left:-16vmax;top:-18vmax;border-radius:50%;
-  background:radial-gradient(closest-side,var(--mi-aur1),transparent 72%);}
+  background:radial-gradient(closest-side,var(--mi-aur1),transparent 72%);filter:blur(10px);}
 .mi-aur-b{position:absolute;width:66vmax;height:54vmax;right:-18vmax;bottom:-20vmax;border-radius:50%;
-  background:radial-gradient(closest-side,var(--mi-aur2),transparent 72%);}
+  background:radial-gradient(closest-side,var(--mi-aur2),transparent 72%);filter:blur(10px);}
 .magic-intro.play .mi-aur-a{animation:mi-drift-a 52s ease-in-out infinite alternate;}
 .magic-intro.play .mi-aur-b{animation:mi-drift-b 64s ease-in-out infinite alternate;}
 @keyframes mi-drift-a{from{transform:translate(0,0) scale(1)}to{transform:translate(5vmax,3vmax) scale(1.06)}}
@@ -452,23 +469,15 @@ html[data-theme="orange"] .magic-intro{--mi-bg1:#fff7ed;--mi-bg2:#fffbeb;--mi-li
 .mi-vignette{position:absolute;inset:0;pointer-events:none;
   background:radial-gradient(ellipse at center,transparent 52%,var(--mi-vig) 100%);}
 
-/* 主 ECG 线：全宽铺满，QRS 尖峰(x=600/1200=50%)与徽章中心对齐 */
-.mi-ecg{position:absolute;left:0;width:100%;top:38%;height:clamp(180px,24vw,260px);
-  transform:translateY(-50%);pointer-events:none;overflow:visible;}
-.mi-ecg-path{fill:none;stroke:var(--mi-ecg-color);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;
-  vector-effect:non-scaling-stroke;filter:drop-shadow(0 0 6px var(--mi-ecg-glow));
-  stroke-dasharray:var(--mi-len,1500) var(--mi-len,1500);stroke-dashoffset:var(--mi-len,1500);}
-.magic-intro.play .mi-ecg-path{animation:mi-draw .85s linear .05s forwards,mi-ecg-dim .5s ease 1.05s forwards,mi-ecg-pulse 833ms ease-in-out 1.55s infinite;}
-@keyframes mi-draw{from{stroke-dashoffset:var(--mi-len,1500)}to{stroke-dashoffset:0}}
-@keyframes mi-ecg-dim{to{opacity:.22}}
-@keyframes mi-ecg-pulse{0%,100%{opacity:.16}12%{opacity:.42}25%{opacity:.2}40%{opacity:.16}}
+/* 全屏临床监护仪 Canvas 层：雷达光扫 + 红色荧光余辉 + 5mm 医疗网格 */
+.mi-ecg-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;}
 
 /* 心跳一拍：QRS 尖峰处迸发的轻微全屏亮度脉冲 */
-.mi-flash{position:absolute;inset:0;pointer-events:none;opacity:0;
-  background:radial-gradient(ellipse 62% 48% at 50% var(--mi-ecg-y,38%),var(--mi-ecg-flash),transparent 72%);}
+.mi-flash{position:absolute;inset:0;pointer-events:none;opacity:0;z-index:1;
+  background:radial-gradient(ellipse 70% 55% at 50% var(--mi-ecg-y,38%),var(--mi-ecg-flash),transparent 75%);}
 .magic-intro.play .mi-flash{animation:mi-flash-beat .4s ease-out .9s,mi-flash-pulse 833ms ease-in-out 1.55s infinite;}
 @keyframes mi-flash-beat{0%{opacity:0}25%{opacity:1}100%{opacity:0}}
-@keyframes mi-flash-pulse{0%,100%{opacity:0}12%{opacity:.07}25%{opacity:0}40%{opacity:0}}
+@keyframes mi-flash-pulse{0%,100%{opacity:0}12%{opacity:.08}25%{opacity:0}40%{opacity:0}}
 
 /* 中央内容（退出一拍脉冲作用于该层） */
 .mi-content{position:relative;z-index:2;text-align:center;display:flex;flex-direction:column;align-items:center;
@@ -482,7 +491,7 @@ html[data-theme="orange"] .magic-intro{--mi-bg1:#fff7ed;--mi-bg2:#fffbeb;--mi-li
 .magic-intro.play .mi-emblem-inner{animation:mi-emblem-in .55s cubic-bezier(.22,1.12,.36,1) .85s both;}
 @keyframes mi-emblem-in{from{opacity:0;transform:scale(.55) translateY(12px)}60%{opacity:1}to{opacity:1;transform:scale(1) translateY(0)}}
 .mi-emblem-inner svg{width:clamp(175px,27vw,250px);height:auto;display:block;
-  filter:drop-shadow(0 12px 30px rgba(2,8,23,.18));}
+  filter:drop-shadow(0 0 26px rgba(239,68,68,.35)) drop-shadow(0 14px 34px rgba(2,8,23,.5));}
 .magic-intro.play .mi-emblem-inner svg{animation:mi-hover 5.5s ease-in-out 1.3s infinite;}
 @keyframes mi-hover{0%,100%{transform:translateY(0) rotate(0deg)}25%{transform:translateY(-5px) rotate(.5deg)}50%{transform:translateY(-7px) rotate(0deg)}75%{transform:translateY(-3px) rotate(-.4deg)}}
 .mi-snake-flow{animation:mi-stream 3s linear infinite;}
@@ -495,80 +504,92 @@ html[data-theme="orange"] .magic-intro{--mi-bg1:#fff7ed;--mi-bg2:#fffbeb;--mi-li
 .mi-orb-core{transform-box:fill-box;transform-origin:center;animation:mi-orb-core 833ms ease-in-out 1.4s infinite;}
 @keyframes mi-orb-core{0%,100%{opacity:.85;transform:scale(1)}12%{opacity:1;transform:scale(1.2)}25%{opacity:.9;transform:scale(1.02)}40%{opacity:.85;transform:scale(1)}}
 
-/* 标题：一次性有力落定（整体位移+字距收拢，不做逐字动画） */
-.mi-title{font-size:clamp(30px,5.2vw,50px);font-weight:800;color:var(--mi-title);line-height:1.2;
-  margin:26px 0 0;letter-spacing:.12em;text-indent:.12em;}
+/* 标题：金属光泽渐变文字 + 一次有力落定（整体位移+字距收拢） */
+.mi-title{font-size:clamp(30px,5.2vw,50px);font-weight:800;line-height:1.2;
+  margin:26px 0 0;letter-spacing:.12em;text-indent:.12em;color:transparent;
+  background:linear-gradient(180deg,#f8fafc,#c7d8ec);-webkit-background-clip:text;background-clip:text;
+  filter:drop-shadow(0 0 28px rgba(56,189,248,.22)) drop-shadow(0 2px 12px rgba(2,8,23,.6));}
 .magic-intro.play .mi-title{animation:mi-title-in .4s cubic-bezier(.19,1,.22,1) 1.15s both;}
 @keyframes mi-title-in{from{opacity:0;transform:translateY(16px);letter-spacing:.34em;text-indent:.34em}
   to{opacity:1;transform:translateY(0);letter-spacing:.12em;text-indent:.12em}}
 
-/* 英文小字距标注 + 中文副标题 */
+/* 英文小字距标注 + 中文副标题（副标题左右细金/青分隔线） */
 .mi-en{font-size:clamp(10px,1.4vw,13px);font-weight:600;color:var(--mi-en);
   letter-spacing:.55em;text-indent:.55em;margin:11px 0 0;}
 .mi-sub{font-size:clamp(12px,2vw,15px);color:var(--mi-sub);letter-spacing:.14em;line-height:1.9;
   font-weight:500;margin:10px 0 0;}
+.mi-sub::before,.mi-sub::after{content:'';display:inline-block;vertical-align:middle;width:44px;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(56,189,248,.55));}
+.mi-sub::before{margin-right:14px;}
+.mi-sub::after{margin-left:14px;background:linear-gradient(90deg,rgba(56,189,248,.55),transparent);}
 .magic-intro.play .mi-en{animation:mi-fade-up .45s ease 1.3s both;}
 .magic-intro.play .mi-sub{animation:mi-fade-up .45s ease 1.38s both;}
 @keyframes mi-fade-up{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
-/* 「进入系统」按钮：实色主题主色 + 心率脉冲光环（box-shadow 扩散环） */
-.mi-start{position:relative;margin-top:32px;padding:15px 54px;border:none;border-radius:13px;cursor:pointer;outline:none;
-  font-size:clamp(15px,2.2vw,17px);font-weight:700;letter-spacing:.3em;text-indent:.3em;color:#fff;
-  background:var(--mi-btn);box-shadow:0 6px 18px var(--mi-btn-shadow),0 2px 6px var(--mi-btn-shadow);
+/* 「进入系统」按钮：金属质感 + 青色脉冲光环保留（box-shadow 扩散环）+ 底部亮线点缀 */
+.mi-start{position:relative;margin-top:32px;padding:15px 54px;border:1px solid rgba(56,189,248,.45);border-radius:13px;cursor:pointer;outline:none;
+  font-size:clamp(15px,2.2vw,17px);font-weight:700;letter-spacing:.3em;text-indent:.3em;color:#eaf6ff;
+  background:linear-gradient(180deg,#1e3a5f,#0f2745);box-shadow:0 0 18px rgba(56,189,248,.25),inset 0 1px 0 rgba(255,255,255,.12);
   transition:transform .25s ease,box-shadow .25s ease,filter .25s ease;overflow:visible;}
 .magic-intro.play .mi-start{animation:mi-rise .35s cubic-bezier(.22,1,.36,1) 1.45s both;}
 @keyframes mi-rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 .mi-start::before{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
   animation:mi-pulse 1.6s ease-out infinite;}
-@keyframes mi-pulse{0%{box-shadow:0 0 0 0 var(--mi-btn-ring)}75%,100%{box-shadow:0 0 0 15px rgba(0,0,0,0)}}
+@keyframes mi-pulse{0%{box-shadow:0 0 0 0 rgba(56,189,248,.35)}75%,100%{box-shadow:0 0 0 15px rgba(0,0,0,0)}}
+.mi-start::after{content:'';position:absolute;left:50%;bottom:7px;transform:translateX(-50%);width:60%;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(56,189,248,.5),transparent);}
 .mi-start:hover,.mi-start:focus-visible{transform:translateY(-2px);filter:brightness(1.06);
-  box-shadow:0 10px 26px var(--mi-btn-ring-hi),0 3px 8px var(--mi-btn-shadow);}
-.mi-start:hover,.mi-start:focus-visible{--mi-btn-ring:var(--mi-btn-ring-hi);}
+  box-shadow:0 0 26px rgba(56,189,248,.4),inset 0 1px 0 rgba(255,255,255,.18);}
 .mi-start:focus-visible{outline:2px solid rgba(255,255,255,.9);outline-offset:2px;}
 
-/* 左下角监护仪 HUD：迷你循环 ECG + HR 数字 + 心跳圆点 */
-.mi-hud{position:absolute;left:26px;bottom:22px;z-index:3;display:flex;align-items:center;gap:12px;
-  color:var(--mi-hud);font-size:12px;font-weight:600;letter-spacing:.14em;pointer-events:none;
-  font-variant-numeric:tabular-nums;}
-.mi-hud-ecg{width:92px;height:26px;overflow:visible;}
-.mi-hud-track{fill:none;stroke:var(--mi-ecg-soft);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
-.mi-hud-sweep{fill:none;stroke:var(--mi-ecg-color);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;
-  stroke-dasharray:30 260;stroke-dashoffset:290;filter:drop-shadow(0 0 3px var(--mi-ecg-glow));}
-.magic-intro.play .mi-hud-sweep{animation:mi-sweep 2.6s linear infinite;}
-@keyframes mi-sweep{from{stroke-dashoffset:290}to{stroke-dashoffset:0}}
-.mi-hud-text{white-space:nowrap;}
-.mi-bpm{color:var(--mi-hud-num);font-size:15px;font-weight:800;}
-/* HR 数字极微弱呼吸（周期 ~0.83s 与心跳同步；reduced-motion 由下方媒体查询统一关闭） */
-.magic-intro.play .mi-bpm{animation:mi-hud-breathe .833s ease-in-out infinite;}
-@keyframes mi-hud-breathe{0%,100%{opacity:1}50%{opacity:.75}}
-.mi-hud-dot{width:8px;height:8px;border-radius:50%;background:var(--mi-ecg-color);opacity:.18;transition:opacity .12s ease;}
-.mi-hud-dot.on{opacity:1;box-shadow:0 0 10px var(--mi-ecg-glow);}
+/* ===== 开场页 四角科室专属微卡片 (内外妇儿) ===== */
+.mi-dept-corner{position:absolute;z-index:3;pointer-events:none;will-change:transform,opacity;}
+.mi-dept-tl{top:38px;left:46px;}
+.mi-dept-tr{top:38px;right:46px;}
+.mi-dept-bl{bottom:38px;left:46px;}
+.mi-dept-br{bottom:38px;right:46px;}
 
-/* 右下角跳过提示 */
-.mi-skip{position:absolute;right:26px;bottom:26px;z-index:3;font-size:11px;color:var(--mi-hud);
-  letter-spacing:.1em;opacity:.6;pointer-events:none;}
-.magic-intro.play .mi-skip{animation:mi-skip-in .4s ease .5s backwards;}
-@keyframes mi-skip-in{from{opacity:0}to{opacity:.6}}
+.mi-dept-card{display:flex;align-items:center;gap:12px;padding:10px 16px;
+  background:rgba(13,20,36,0.62);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid rgba(56,189,248,0.22);border-radius:14px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.06);
+  transition:transform .3s ease,box-shadow .3s ease;}
 
-/* 跳过 → 完成态：一次性入场动画立即就位（常驻循环动画不受影响） */
-.magic-intro.skip .mi-ecg-path,
+.mi-dept-icon-box{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.mi-icon-surgery{background:rgba(52,211,153,0.15);color:#34d399;border:1px solid rgba(52,211,153,0.3);}
+.mi-icon-internal{background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.3);}
+.mi-icon-obgyn{background:rgba(244,114,182,0.15);color:#f472b6;border:1px solid rgba(244,114,182,0.3);}
+.mi-icon-pedia{background:rgba(251,191,36,0.15);color:#fbbf24;border:1px solid rgba(251,191,36,0.3);}
+
+.mi-dept-name{font-size:14px;font-weight:700;color:var(--mi-title);letter-spacing:1px;line-height:1.2;}
+.mi-dept-en{font-size:9.5px;font-weight:600;color:var(--mi-en);letter-spacing:1.5px;margin-top:2px;}
+
+/* 入场动效：各角落自外向内渐入浮动 */
+.mi-dept-tl,.mi-dept-tr,.mi-dept-bl,.mi-dept-br{opacity:0;}
+.magic-intro.play .mi-dept-tl{animation:mi-corner-in .5s cubic-bezier(.22,1,.36,1) 1.25s both,mi-float-a 6s ease-in-out 1.8s infinite;}
+.magic-intro.play .mi-dept-tr{animation:mi-corner-in .5s cubic-bezier(.22,1,.36,1) 1.32s both,mi-float-b 6.5s ease-in-out 1.8s infinite;}
+.magic-intro.play .mi-dept-bl{animation:mi-corner-in .5s cubic-bezier(.22,1,.36,1) 1.39s both,mi-float-b 7s ease-in-out 1.8s infinite;}
+.magic-intro.play .mi-dept-br{animation:mi-corner-in .5s cubic-bezier(.22,1,.36,1) 1.46s both,mi-float-a 6.8s ease-in-out 1.8s infinite;}
+
+@keyframes mi-corner-in{from{opacity:0;transform:translateY(12px) scale(0.94)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes mi-float-a{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes mi-float-b{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
+
+/* 跳过 → 完成态：一次性入场动画立即就位 */
+.magic-intro.skip .mi-dept-corner{opacity:1!important;animation:none!important;}
 .magic-intro.skip .mi-emblem-inner,
 .magic-intro.skip .mi-title,
 .magic-intro.skip .mi-en,
 .magic-intro.skip .mi-sub,
 .magic-intro.skip .mi-start,
 .magic-intro.skip .mi-flash{animation-delay:0s!important;animation-duration:.01s!important;animation-fill-mode:forwards!important;}
-/* 跳过后提示已无意义，直接隐藏 */
-.magic-intro.skip .mi-skip{display:none;}
 
 /* prefers-reduced-motion：全部静态就位、无动效 */
 @media (prefers-reduced-motion:reduce){
   .magic-intro,.magic-intro *{animation:none!important;transition:none!important;}
-  .mi-ecg-path{stroke-dashoffset:0!important;opacity:.22!important;}
   .mi-orb-glow,.mi-orb-core{opacity:1!important;animation:none!important;}
   .mi-emblem-inner,.mi-title,.mi-en,.mi-sub,.mi-start{opacity:1!important;}
-  .mi-hud-dot{opacity:.75;}
-  .mi-skip{display:none;}
+  .mi-dept-corner{opacity:1!important;}
   .dept-btn.active{animation:none!important;}
 }
 
@@ -670,11 +691,19 @@ body.magic-revealed .left-panel{animation:none}
 .search-box{font-size:13px}
 .disease-list{max-height:50vh}
 /* 15) intro 开场页 */
+.mi-amb-grid{height:30%;opacity:.6;}
 .mi-title{font-size:clamp(26px,7vw,38px)}
 .mi-sub{font-size:13px}
 .mi-start{padding:13px 40px}
-.mi-hud{left:14px;bottom:14px}
-.mi-skip{right:14px;bottom:18px}
+.mi-dept-tl{top:16px;left:16px;}
+.mi-dept-tr{top:16px;right:16px;}
+.mi-dept-bl{bottom:16px;left:16px;}
+.mi-dept-br{bottom:16px;right:16px;}
+.mi-dept-card{padding:6px 10px;gap:6px;border-radius:10px;}
+.mi-dept-icon-box{width:28px;height:28px;}
+.mi-dept-icon-box svg{width:16px;height:16px;}
+.mi-dept-name{font-size:12px;}
+.mi-dept-en{display:none;}
 /* 16) 抽屉内疾病列表：移除固定高度，由抽屉整体滚动 */
 .disease-list{max-height:none}
 }
