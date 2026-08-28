@@ -12,6 +12,21 @@
         return weightKg / (h * h);
     }
 
+    // 体表面积 BSA (许文生中国人公式与 DuBois 标准公式)
+    // 许文生公式: BSA (m²) = 0.0061 × 身高(cm) + 0.0128 × 体重(kg) - 0.1529 (人卫《儿科学》《外科学》)
+    // DuBois 公式: BSA (m²) = 0.007184 × 身高(cm)^0.725 × 体重(kg)^0.425
+    function bsaStevenson(heightCm, weightKg){
+        heightCm = num(heightCm); weightKg = num(weightKg);
+        if(!(heightCm > 0) || !(weightKg > 0)) return NaN;
+        return 0.0061 * heightCm + 0.0128 * weightKg - 0.1529;
+    }
+
+    function bsaDubois(heightCm, weightKg){
+        heightCm = num(heightCm); weightKg = num(weightKg);
+        if(!(heightCm > 0) || !(weightKg > 0)) return NaN;
+        return 0.007184 * Math.pow(heightCm, 0.725) * Math.pow(weightKg, 0.425);
+    }
+
     // QTc（Bazett 公式）
     function qtcBazett(qtMs, hr){
         qtMs = num(qtMs); hr = num(hr);
@@ -54,10 +69,15 @@
         return total;
     }
 
-    // GRACE 1.0 评分（年龄/心率/收缩压/肌酐 mg/dL/Killip/心脏骤停/ST段偏移/心肌标志物）
+    // GRACE 1.0 评分（年龄/心率/收缩压/肌酐/Killip/心脏骤停/ST段偏移/心肌标志物）
+    // creatinineMg 或 creatinineUmol 均可输入
     function graceScore(p){
         p = p || {};
-        const age = num(p.age), hr = num(p.hr), sbp = num(p.sbp), cr = num(p.creatinineMg), killip = num(p.killip);
+        const age = num(p.age), hr = num(p.hr), sbp = num(p.sbp), killip = num(p.killip);
+        let cr = num(p.creatinineMg);
+        if(isNaN(cr) && !isNaN(num(p.creatinineUmol))){
+            cr = num(p.creatinineUmol) / 88.4;
+        }
         if([age, hr, sbp, cr, killip].some(isNaN)) return NaN;
         if(age < 20 || age > 120 || hr < 20 || hr > 250 || sbp < 50 || sbp > 250 || cr < 0.1 || cr > 20 || killip < 0 || killip > 4) return NaN;
         let s = 0;
@@ -72,7 +92,7 @@
         return s;
     }
 
-    // Glasgow-Blatchford 评分
+    // Glasgow-Blatchford 评分（Lancet 2000 原版及常用临床修订版）
     function blatchfordScore(p){
         p = p || {};
         const bun = num(p.bun), hb = num(p.hb), sbp = num(p.sbp), pulse = num(p.pulse);
@@ -91,7 +111,23 @@
         if(p.syncope) s += 2;
         if(p.liverDisease) s += 2;
         if(p.heartFailure) s += 2;
+        if(p.hematemesis) s += 2; // 原版 Lancet 2000 项（呕血）
         return s;
+    }
+
+    // MELD 原版评分（UNOS 标准）：tbil(μmol/L), inr, scr(μmol/L), dialysis(boolean)
+    // 换算: tbil mg/dL = tbil/17.1, scr mg/dL = scr/88.4 (透析或scr>4.0均截断为4.0，变量下限为1.0)
+    function meldScore(tbilUmol, inr, scrUmol, isDialysis){
+        tbilUmol = num(tbilUmol); inr = num(inr); scrUmol = num(scrUmol);
+        if([tbilUmol, inr, scrUmol].some(isNaN)) return NaN;
+        const tbil_mg = tbilUmol / 17.1;
+        let scr_mg = scrUmol / 88.4;
+        if(isDialysis || scr_mg > 4.0) scr_mg = 4.0;
+        let meld = 3.78 * Math.log(Math.max(tbil_mg, 1.0)) + 11.2 * Math.log(Math.max(inr, 1.0)) + 9.57 * Math.log(Math.max(scr_mg, 1.0)) + 6.43;
+        meld = Math.round(meld);
+        if(meld < 6) meld = 6;
+        if(meld > 40) meld = 40;
+        return meld;
     }
 
     // NIHSS：items 为各分项得分数组，返回总和；任一为 NaN 则返回 NaN
@@ -119,8 +155,89 @@
         };
     }
 
+    // 声明式临床计算器 Schema 定义集（用于引擎驱动与元数据查询）
+    const CALCULATOR_SCHEMAS = {
+        bmi: {
+            id: 'bmi',
+            name: '身体质量指数 (BMI)',
+            category: 'general',
+            inputs: [
+                { id: 'height', label: '身高 (cm)', type: 'number', min: 30, max: 250, default: 170 },
+                { id: 'weight', label: '体重 (kg)', type: 'number', min: 1, max: 300, default: 65 }
+            ],
+            calc: function(inputs) {
+                const val = bmi(inputs.weight, inputs.height);
+                if (isNaN(val)) return { error: '请输入有效的身高和体重' };
+                let tier = '正常';
+                if (val < 18.5) tier = '偏瘦';
+                else if (val >= 24 && val < 28) tier = '超重';
+                else if (val >= 28) tier = '肥胖';
+                return { value: Number(val.toFixed(2)), unit: 'kg/m²', tier: tier };
+            }
+        },
+        map: {
+            id: 'map',
+            name: '平均动脉压 (MAP)',
+            category: 'cardio',
+            inputs: [
+                { id: 'sbp', label: '收缩压 (mmHg)', type: 'number', min: 40, max: 280, default: 120 },
+                { id: 'dbp', label: '舒张压 (mmHg)', type: 'number', min: 20, max: 200, default: 80 }
+            ],
+            calc: function(inputs) {
+                const val = mapArterial(inputs.sbp, inputs.dbp);
+                if (isNaN(val)) return { error: '收缩压必须大于舒张压' };
+                return { value: Number(val.toFixed(1)), unit: 'mmHg', tier: (val >= 70 && val <= 105) ? '正常' : (val < 70 ? '偏低 (器官灌注不足风险)' : '偏高') };
+            }
+        },
+        apri: {
+            id: 'apri',
+            name: 'AST/PLT 肝纤维化指数 (APRI)',
+            category: 'liver',
+            inputs: [
+                { id: 'ast', label: 'AST (U/L)', type: 'number', min: 1, max: 2000, default: 40 },
+                { id: 'plt', label: '血小板 PLT (×10^9/L)', type: 'number', min: 1, max: 1000, default: 150 }
+            ],
+            calc: function(inputs) {
+                const val = apri(inputs.ast, inputs.plt);
+                if (isNaN(val)) return { error: '请输入有效的数值' };
+                return { value: Number(val.toFixed(2)), tier: val > 1.5 ? '提示显著肝硬化可能' : (val < 0.5 ? '基本排除严重肝纤维化' : '中度区间') };
+            }
+        },
+        fib4: {
+            id: 'fib4',
+            name: 'FIB-4 肝纤维化指数',
+            category: 'liver',
+            inputs: [
+                { id: 'age', label: '年龄 (岁)', type: 'number', min: 1, max: 120 },
+                { id: 'ast', label: 'AST (U/L)', type: 'number', min: 1, max: 2000 },
+                { id: 'alt', label: 'ALT (U/L)', type: 'number', min: 1, max: 2000 },
+                { id: 'plt', label: '血小板 (×10^9/L)', type: 'number', min: 1, max: 1000 }
+            ],
+            calc: function(inputs) {
+                const val = fib4(inputs.age, inputs.ast, inputs.alt, inputs.plt);
+                if (isNaN(val)) return { error: '请输入有效检验数值' };
+                return { value: Number(val.toFixed(2)), tier: val > 3.25 ? '高度提示严重肝纤维化/肝硬化' : (val < 1.45 ? '阴性预测值高（排除晚期纤维化）' : '不确定区间') };
+            }
+        }
+    };
+
+    // 通用 Schema 驱动计算引擎
+    const CalcEngine = {
+        getSchemas: () => CALCULATOR_SCHEMAS,
+        getSchema: (id) => CALCULATOR_SCHEMAS[id] || null,
+        evaluate: function(calcId, inputs) {
+            const schema = CALCULATOR_SCHEMAS[calcId];
+            if (!schema || typeof schema.calc !== 'function') {
+                return { error: `未找到计算器 Schema: ${calcId}` };
+            }
+            return schema.calc(inputs || {});
+        }
+    };
+
     global.CalcCore = {
         bmi: bmi,
+        bsaStevenson: bsaStevenson,
+        bsaDubois: bsaDubois,
         qtcBazett: qtcBazett,
         mapArterial: mapArterial,
         apri: apri,
@@ -128,7 +245,10 @@
         sofaScore: sofaScore,
         graceScore: graceScore,
         blatchfordScore: blatchfordScore,
+        meldScore: meldScore,
         nihssScore: nihssScore,
-        gestationalAge: gestationalAge
+        gestationalAge: gestationalAge,
+        schemas: CALCULATOR_SCHEMAS,
+        engine: CalcEngine
     };
 })(typeof window !== 'undefined' ? window : globalThis);

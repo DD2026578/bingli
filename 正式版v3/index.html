@@ -51,7 +51,7 @@
 </div>
 <h1 class="mi-title">外科宝宝病历巴士</h1>
 <p class="mi-en">CLINICAL RECORD SYSTEM</p>
-<p class="mi-sub">完整入院 · 首次病程 · 日常病程 · 出院记录 · 临床路径 · 临床计算器 · AI 智能分析</p>
+<p class="mi-sub">完整入院 · 首次病程 · 日常病程 · 出院记录 · 临床路径 · 临床计算器 · 用药助手 · AI对话</p>
 <button class="mi-start" id="magicStart" type="button">进入系统</button>
 </div>
 <div class="mi-dept-corner mi-dept-tl" aria-hidden="true">
@@ -153,7 +153,7 @@
 </div>
 <div class="header-text">
 <h1>外科宝宝病历巴士</h1>
-<p>完整入院记录 · 首次病程 · 日常病程 · 出院记录 · 临床路径 · 临床计算器 · AI智能分析</p>
+<p>完整入院记录 · 首次病程 · 日常病程 · 出院记录 · 临床路径 · 临床计算器 · 用药助手 · AI对话</p>
 </div>
 <div class="header-badge">
 <button id="themeToggleBtn" class="theme-toggle-btn" onclick="toggleTheme()" title="点击切换主题：白昼清爽 → 宝宝粉 → 护眼绿 → 护眼夜间 → 梦幻紫 → 暖阳橙">
@@ -182,6 +182,9 @@
 <button class="btn btn-outline dept-drawer-btn" onclick="toggleDeptDrawer()">📋 选科室/疾病</button>
 <button class="btn btn-outline" onclick="toggleAutoPE()">⚙️ 自动填充正常体检</button>
 <button class="btn btn-outline" onclick="fillNormalVitals()">❤️ 填正常体征</button>
+<button class="btn btn-outline" onclick="saveDraft(false)" title="手动将当前编辑的病历暂存到浏览器">💾 暂存草稿</button>
+<button class="btn btn-outline" id="restoreDraftBtn" onclick="restoreDraft()" style="display:none" title="恢复上次暂存的病历草稿">📂 恢复草稿</button>
+<button class="btn btn-outline" id="clearDraftBtn" onclick="clearDraft()" style="display:none" title="清空本地暂存的病历草稿">🗑️ 清空草稿</button>
 <span id="autoSaveStatus" style="font-size:12px;color:var(--c-text-muted);margin-left:auto;align-self:center;font-weight:500"></span>
 </div>
 <div class="hint">💡 <strong>使用指南：</strong>① 左侧选科室 → 选疾病（支持拼音缩写智能搜索），点击疾病即自动填充五大文书 ② 自由编辑病历内容 ③ 切换 Tab 栏至 <b>临床计算器</b>、<b>用药助手</b> 或 <b>AI对话</b></div>
@@ -707,6 +710,7 @@
 <label class="calc-checkbox"><input type="checkbox" id="gb_syncope"> 晕厥 (+2分)</label>
 <label class="calc-checkbox"><input type="checkbox" id="gb_liver"> 肝病 (+2分)</label>
 <label class="calc-checkbox"><input type="checkbox" id="gb_hf"> 心力衰竭 (+2分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="gb_hematemesis"> 呕血 (+2分)</label>
 </div>
 <div class="calc-action-bar"><button class="btn btn-primary" onclick="calcBlatchford()">⚡ 计算 Blatchford 评分</button></div>
 <div class="calc-result-box" id="res_gb" style="display:none"></div>
@@ -763,10 +767,11 @@
 </div>
 <div class="calc-subpanel" id="sub-wells-pe">
 <div class="calc-check-grid">
-<label class="calc-checkbox"><input type="checkbox" id="wpe_1"> PE比其他诊断可能性更大 (+3分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="wpe_0"> DVT 临床体征（下肢不对称肿胀、沿深静脉走行压痛） (+3分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="wpe_1"> PE 为最可能诊断或可能性不低于其他诊断 (+3分)</label>
 <label class="calc-checkbox"><input type="checkbox" id="wpe_2"> 心率 &gt; 100 次/分 (+1.5分)</label>
 <label class="calc-checkbox"><input type="checkbox" id="wpe_3"> 过去4周内制动或外科手术 (+1.5分)</label>
-<label class="calc-checkbox"><input type="checkbox" id="wpe_4"> 既往DVT/PE病史 (+1.5分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="wpe_4"> 既往 DVT / PE 病史 (+1.5分)</label>
 <label class="calc-checkbox"><input type="checkbox" id="wpe_5"> 咯血 (+1分)</label>
 <label class="calc-checkbox"><input type="checkbox" id="wpe_6"> 恶性肿瘤 (正在治疗或6月内姑息治疗) (+1分)</label>
 </div>
@@ -815,6 +820,7 @@
 <select id="pedia_age_stage">
 <option value="m1_6">1 ~ 6 个月</option>
 <option value="m7_12">7 ~ 12 个月</option>
+<option value="m13_24">13 ~ 24 个月</option>
 <option value="y2_12" selected>2 ~ 12 岁</option>
 </select></div>
 <div class="calc-field"><label id="pedia_age_label">年龄 (岁 或 月)</label><input type="number" id="pedia_age_val" value="5"></div>
@@ -938,17 +944,21 @@
 </div>
 <div class="calc-check-grid">
 <label class="calc-checkbox"><input type="checkbox" id="caprini_1"> 年龄 41~60岁 (+1分)</label>
-<label class="calc-checkbox"><input type="checkbox" id="caprini_2"> 肥胖 BMI &gt; 25 kg/m² (+1分)</label>
-<label class="calc-checkbox"><input type="checkbox" id="caprini_3"> 下肢水肿、静脉曲张、石膏制动 (+1分)</label>
-<label class="calc-checkbox"><input type="checkbox" id="caprini_4"> 严重肺炎、脓毒症、急性呼吸衰竭 (+1分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="caprini_2"> 超重/肥胖 BMI &gt; 25 kg/m² (+1分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="caprini_3"> 下肢肿胀、静脉曲张 (+1分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="caprini_4"> 严重肺部感染、急重症内科疾病 (+1分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="caprini_13"> 计划小手术 (&lt;45分钟) (+1分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="caprini_14"> 口服避孕药或激素替代治疗 (+1分)</label>
 <label class="calc-checkbox"><input type="checkbox" id="caprini_5"> 年龄 61~74岁 (+2分)</label>
 <label class="calc-checkbox"><input type="checkbox" id="caprini_6"> 中心静脉置管 (+2分)</label>
-<label class="calc-checkbox"><input type="checkbox" id="caprini_7"> 关节镜手术、大手术 &gt; 45min (+2分)</label>
-<label class="calc-checkbox"><input type="checkbox" id="caprini_8"> 腹腔镜手术 &gt; 45min (+2分)</label>
-<label class="calc-checkbox"><input type="checkbox" id="caprini_9"> 癌症、既往DVT/PE病史 (+3分)</label>
-<label class="calc-checkbox"><input type="checkbox" id="caprini_10"> 卧床 &gt; 72小时、石膏固定下肢、下肢瘫痪 (+3分)</label>
-<label class="calc-checkbox"><input type="checkbox" id="caprini_11"> 择期人工关节置换术、髋/骨盆/股骨骨折手术 (+5分)</label>
-<label class="calc-checkbox"><input type="checkbox" id="caprini_12"> 年龄 ≥ 75岁 (+4分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="caprini_7"> 大手术 (&gt;45分钟，含关节镜/腹腔镜等) (+2分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="caprini_15"> 现患或既往恶性肿瘤 (+2分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="caprini_8"> 石膏固定、肢体制动 (+2分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="caprini_10"> 卧床制动 &gt; 72小时 (+2分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="caprini_12"> 年龄 ≥ 75岁 (+3分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="caprini_9"> 既往 DVT / PE 病史 (+3分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="caprini_16"> 易栓症阳性家族史/遗传性血栓倾向 (+3分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="caprini_11"> 择期人工关节置换术、髋/骨盆/股骨骨折手术、脑卒中(&lt;1月) (+5分)</label>
 </div>
 <div class="calc-action-bar">
 <button class="btn btn-primary" onclick="calcCaprini()">⚡ 计算 Caprini 评分</button>
@@ -971,8 +981,8 @@
 </div>
 <div class="calc-check-grid">
 <label class="calc-checkbox"><input type="checkbox" id="padua_1"> 活动性肿瘤 (+3分)</label>
-<label class="calc-checkbox"><input type="checkbox" id="padua_2"> 既往VTE病史 (+3分)</label>
-<label class="calc-checkbox"><input type="checkbox" id="padua_3"> 减少活动 ≥ 3天 (+2分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="padua_2"> 既往 VTE 病史 (+3分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="padua_3"> 减少活动 ≥ 3天（卧床或严重受限） (+3分)</label>
 <label class="calc-checkbox"><input type="checkbox" id="padua_4"> 已知易栓症 (+3分)</label>
 <label class="calc-checkbox"><input type="checkbox" id="padua_5"> 近期（≤1个月）大手术或创伤 (+2分)</label>
 <label class="calc-checkbox"><input type="checkbox" id="padua_6"> 高龄 ≥ 70岁 (+1分)</label>
@@ -981,7 +991,6 @@
 <label class="calc-checkbox"><input type="checkbox" id="padua_9"> 急性感染和/或风湿性疾病 (+1分)</label>
 <label class="calc-checkbox"><input type="checkbox" id="padua_10"> 肥胖 BMI ≥ 30 kg/m² (+1分)</label>
 <label class="calc-checkbox"><input type="checkbox" id="padua_11"> 正在进行激素治疗 (+1分)</label>
-<label class="calc-checkbox"><input type="checkbox" id="padua_12"> 血小板计数 > 100×10⁹/L，需要评估 (+1分)</label>
 </div>
 <div class="calc-action-bar">
 <button class="btn btn-primary" onclick="calcPadua()">⚡ 计算 Padua 评分</button>
@@ -1157,7 +1166,7 @@
 <div class="calc-field"><label>年龄 (岁)</label><input type="number" id="grace_age" value="60" min="20" max="120"></div>
 <div class="calc-field"><label>心率 (次/分)</label><input type="number" id="grace_hr" value="90" min="20" max="250"></div>
 <div class="calc-field"><label>收缩压 (mmHg)</label><input type="number" id="grace_sbp" value="130" min="50" max="250"></div>
-<div class="calc-field"><label>肌酐 (mg/dL)</label><input type="number" id="grace_cr" value="1.0" step="0.1" min="0.1" max="20"></div>
+<div class="calc-field"><label>肌酐 (mg/dL 或 μmol/L，&gt;30自动换算)</label><input type="number" id="grace_cr" value="1.0" step="0.1" min="0.1" max="2000"></div>
 <div class="calc-field"><label>Killip 分级</label><select id="grace_killip"><option value="1">Ⅰ</option><option value="2">Ⅱ</option><option value="3">Ⅲ</option><option value="4">Ⅳ</option></select></div>
 </div>
 <div class="calc-check-grid">

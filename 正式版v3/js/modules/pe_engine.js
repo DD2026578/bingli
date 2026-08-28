@@ -141,15 +141,25 @@ window.PEEngine = (function(){
     }
 
     /**
-     * 阴性子句判定：检查一个子句是否为阴性/正常描述
+     * 阴性子句判定状态机：检查一个子句是否为纯阴性/正常描述
      */
     function isClauseNegative(c) {
+        if (!c) return true;
+        c = c.trim();
+        // 显式阳性标记
+        if (/阳性|\(\+\)|\(＋\)|（\+）|（＋）|触及|明显|存在|增快|减弱|消失|亢进/.test(c)) {
+            // 如果同时包含转折且后半段是阳性（如“无红肿，但见明显压痛”），判定为阳性
+            if (/但|伴|见|有/.test(c) && /压痛|反跳痛|肿|包块|畸形|啰音|杂音|异常/.test(c)) {
+                return false;
+            }
+        }
         if (/阳性|\(\+\)|\(＋\)|（\+）|（＋）/.test(c)) return false;
         if (/阴性/.test(c)) return true;
-        if (/无/.test(c)) return true;
-        if (/未/.test(c)) return true;
-        if (/不高|不肿|无肿|未触及/.test(c)) return true;
-        if (/正常/.test(c) && !/异常/.test(c)) return true;
+        if (/^无[^\n]*|^未[^\n]*/.test(c)) {
+            if (!/但|伴|见/.test(c)) return true;
+        }
+        if (/不高|不肿|无肿|未触及|未见异常|未引出/.test(c)) return true;
+        if (/正常/.test(c) && !/异常|不正常/.test(c)) return true;
         if (/\(-\)|（-）/.test(c)) return true;
         return false;
     }
@@ -159,11 +169,11 @@ window.PEEngine = (function(){
      */
     function specHasPositive(spec, pattern) {
         spec = spec || '';
-        var sentences = spec.split(/[。；;\n]/);
+        var sentences = spec.split(/[。；;!\n\r]/);
         for (var i = 0; i < sentences.length; i++) {
             var s = sentences[i].trim();
             if (!s) continue;
-            var clauses = s.split(/[，,]/);
+            var clauses = s.split(/[，,、]/);
             for (var j = 0; j < clauses.length; j++) {
                 var c = clauses[j].trim();
                 if (!c) continue;
@@ -237,11 +247,11 @@ window.PEEngine = (function(){
     function extractAllClauses(spec, pattern) {
         spec = spec || '';
         var all = [];
-        var sentences = spec.split(/[。；;\n]/);
+        var sentences = spec.split(/[。；;!\n\r]/);
         for (var i = 0; i < sentences.length; i++) {
             var s = sentences[i].trim();
             if (!s) continue;
-            var clauses = s.split(/[，,]/);
+            var clauses = s.split(/[，,、]/);
             for (var j = 0; j < clauses.length; j++) {
                 var c = clauses[j].trim();
                 if (!c) continue;
@@ -350,8 +360,8 @@ window.PEEngine = (function(){
         if (hasSys('respiratory') || specHasSystemFinding(spec, 'respiratory')) {
             var respClauses = extract(/啰音|呼吸音|管状呼吸|肺.*叩诊|语颤|气管.*偏|胸膜摩擦/);
             if (hasPos(respClauses) && /两肺叩诊音正常、呼吸音正常，未闻及干湿性啰音/.test(result)) {
-                // 避免重复"肺"字：若首句已含"肺"则不加前缀
-                var respPrefix = /肺/.test(respClauses[0]) ? '' : '两肺';
+                // 避免重复"肺"字：若首句已含"肺"或"胸"则不加前缀
+                var respPrefix = /肺|胸/.test(respClauses[0]) ? '' : '两肺';
                 result = result.replace(/两肺叩诊音正常、呼吸音正常，未闻及干湿性啰音/, respPrefix + respClauses.join('，'));
             }
         }

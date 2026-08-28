@@ -61,3 +61,10 @@ function copyAiPrompt(){
         window.showToast('📋 AI 提示词已成功复制到剪贴板！');
     }
 }
+
+// 统一导出到全局对象
+(function(g){
+    if(!g) return;
+    g.fillAiPrompt = fillAiPrompt;
+    g.copyAiPrompt = copyAiPrompt;
+})(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this));

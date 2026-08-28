@@ -112,12 +112,27 @@ function loadDiseaseList(){
     }
 }
 
-function searchDisease(kw){
+// 轻量防抖函数
+function debounce(fn, delay = 150) {
+    let timer = null;
+    return function(...args) {
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(() => {
+            fn.apply(this, args);
+        }, delay);
+    };
+}
+
+const performSearchDisease = function(kw) {
+    const term = (kw || '').trim().toLowerCase();
     const headers = document.querySelectorAll('.disease-group-header');
     if(headers.length === 0){
         document.querySelectorAll('.disease-item').forEach(it => {
-            const n = it.querySelector('.name').textContent;
-            it.style.display = (n.includes(kw) || !kw) ? 'flex' : 'none';
+            const nameEl = it.querySelector('.name');
+            const tagEl = it.querySelector('.tag');
+            const n = (nameEl ? nameEl.textContent : '').toLowerCase();
+            const tag = (tagEl ? tagEl.textContent : '').toLowerCase();
+            it.style.display = (!term || n.includes(term) || tag.includes(term)) ? 'flex' : 'none';
         });
         return;
     }
@@ -126,8 +141,11 @@ function searchDisease(kw){
         let visible = 0;
         let next = h.nextElementSibling;
         while(next && !next.classList.contains('disease-group-header')){
-            const n = next.querySelector('.name').textContent;
-            if(n.includes(kw) || !kw){
+            const nameEl = next.querySelector('.name');
+            const tagEl = next.querySelector('.tag');
+            const n = (nameEl ? nameEl.textContent : '').toLowerCase();
+            const tag = (tagEl ? tagEl.textContent : '').toLowerCase();
+            if(!term || n.includes(term) || tag.includes(term)){
                 next.style.display = 'flex';
                 visible++;
             } else {
@@ -137,7 +155,9 @@ function searchDisease(kw){
         }
         h.style.display = visible > 0 ? 'block' : 'none';
     });
-}
+};
+
+const searchDisease = debounce(performSearchDisease, 120);
 
 function selectDisease(i){
     currentDisease = i;
@@ -186,10 +206,21 @@ function fillTemplate(){
     if(form) form.scrollIntoView({ behavior: 'smooth' });
 }
 
-function switchTab(tabId){
+function switchTab(tabId, targetEl){
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-    if(event && event.target) event.target.classList.add('active');
+    
+    // 优先使用显式传入的元素，其次尝试匹配对应 tabId 的按钮，最后兜底当前点击目标
+    let activeBtn = targetEl;
+    if (!activeBtn) {
+        activeBtn = document.querySelector(`.tab-btn[onclick*="'${tabId}'"]`) ||
+                    document.querySelector(`.tab-btn[onclick*='"${tabId}"']`);
+    }
+    if (!activeBtn && typeof event !== 'undefined' && event && event.target && event.target.classList.contains('tab-btn')) {
+        activeBtn = event.target;
+    }
+    if (activeBtn) activeBtn.classList.add('active');
+
     const targetPanel = document.getElementById('panel-' + tabId);
     if(targetPanel) targetPanel.classList.add('active');
 }
@@ -407,28 +438,86 @@ function collectFormData(){
 }
 
 function saveDraft(quiet = true){
-    const data = collectFormData();
-    localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
-    const statusEl = document.getElementById('autoSaveStatus');
-    if(statusEl) statusEl.textContent = '已自动暂存 ' + new Date().toLocaleTimeString();
-    if(!quiet) showToast('💾 病历草稿已成功暂存到本地！');
+    try {
+        const data = collectFormData();
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
+        const statusEl = document.getElementById('autoSaveStatus');
+        if(statusEl) statusEl.textContent = '已暂存 ' + new Date().toLocaleTimeString();
+        updateDraftButtons(true);
+        if(!quiet) showToast('💾 病历草稿已成功暂存到本地！');
+    } catch(e) {
+        if(!quiet) showToast('⚠️ 暂存失败：浏览器存储受限或已满');
+    }
+}
+
+function restoreDraft(){
+    try {
+        const json = localStorage.getItem(DRAFT_KEY);
+        if(!json){
+            showToast('⚠️ 当前无已保存的病历草稿！');
+            return;
+        }
+        const data = JSON.parse(json);
+        if(data._dept && data._dept !== currentDept){
+            selectDept(data._dept);
+        }
+        if(typeof data._diseaseIndex === 'number' && data._diseaseIndex >= 0){
+            currentDisease = data._diseaseIndex;
+            window.currentDisease = data._diseaseIndex;
+            window.currentDiseaseItem = window.MedicalDB ? window.MedicalDB.getTemplate(currentDept, data._diseaseIndex) : null;
+            document.querySelectorAll('.disease-item').forEach(it => {
+                it.classList.toggle('selected', parseInt(it.dataset.idx) === data._diseaseIndex);
+            });
+        }
+        Object.keys(data).forEach(k => {
+            if(k.startsWith('_')) return;
+            const el = document.getElementById(k);
+            if(el) el.value = data[k];
+        });
+        showToast('📂 已成功恢复上次暂存的病历草稿 (' + (data._timestamp || '') + ')！');
+    } catch(e) {
+        showToast('⚠️ 恢复草稿失败，草稿数据解析异常');
+    }
+}
+
+function clearDraft(){
+    try {
+        localStorage.removeItem(DRAFT_KEY);
+        const statusEl = document.getElementById('autoSaveStatus');
+        if(statusEl) statusEl.textContent = '草稿已清空';
+        updateDraftButtons(false);
+        showToast('🗑️ 本地病历草稿已清空！');
+    } catch(e){}
+}
+
+function updateDraftButtons(hasDraft){
+    const restoreBtn = document.getElementById('restoreDraftBtn');
+    const clearBtn = document.getElementById('clearDraftBtn');
+    if(restoreBtn) restoreBtn.style.display = hasDraft ? 'inline-flex' : 'none';
+    if(clearBtn) clearBtn.style.display = hasDraft ? 'inline-flex' : 'none';
 }
 
 let autoSaveTimer = null;
 function initAutoSave(){
     document.addEventListener('input', (e) => {
         if(e.target.matches('input, textarea, select')){
+            if(e.target.closest('#panel-calculator, #panel-aiChat')) return;
             if(autoSaveTimer) clearTimeout(autoSaveTimer);
             autoSaveTimer = setTimeout(() => saveDraft(true), 2500);
         }
     });
-    const json = localStorage.getItem(DRAFT_KEY);
-    if(json){
-        try {
+    try {
+        const json = localStorage.getItem(DRAFT_KEY);
+        if(json){
             const data = JSON.parse(json);
             const statusEl = document.getElementById('autoSaveStatus');
-            if(statusEl) statusEl.textContent = '有未清空草稿 (' + (data._timestamp || '').slice(-8) + ')';
-        } catch(e){}
+            if(statusEl) statusEl.textContent = '有草稿 (' + (data._timestamp || '').slice(-8) + ')';
+            updateDraftButtons(true);
+        } else {
+            updateDraftButtons(false);
+        }
+    } catch(e){
+        updateDraftButtons(false);
     }
 }
 
@@ -489,3 +578,35 @@ function closeDeptDrawer(){
     if(p) p.classList.remove('open');
     if(o) o.classList.remove('show');
 }
+
+// 统一导出到全局对象，支持模块化/测试与内联事件
+(function(g){
+    if(!g) return;
+    g.init = init;
+    g.initTheme = initTheme;
+    g.selectDept = selectDept;
+    g.selectDisease = selectDisease;
+    g.searchDisease = searchDisease;
+    g.performSearchDisease = performSearchDisease;
+    g.debounce = debounce;
+    g.fillTemplate = fillTemplate;
+    g.switchTab = switchTab;
+    g.fillNormalPE = fillNormalPE;
+    g.fillNormalVitals = fillNormalVitals;
+    g.toggleAutoPE = toggleAutoPE;
+    g.regeneratePE = regeneratePE;
+    g.saveDraft = saveDraft;
+    g.restoreDraft = restoreDraft;
+    g.clearDraft = clearDraft;
+    g.collectFormData = collectFormData;
+    g.toggleTheme = toggleTheme;
+    g.showToast = showToast;
+    g.copyToClipboard = copyToClipboard;
+    g.copyRecordForAI = copyRecordForAI;
+    g.copyWithPrompt = copyWithPrompt;
+    g.copyWithCustomPrompt = copyWithCustomPrompt;
+    g.clearPrompt = clearPrompt;
+    g.openAI = openAI;
+    g.toggleDeptDrawer = toggleDeptDrawer;
+    g.closeDeptDrawer = closeDeptDrawer;
+})(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this));

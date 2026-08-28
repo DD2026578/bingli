@@ -48,9 +48,14 @@ function showCalcResult(boxId, html, resText, extraHtml){
     const box = document.getElementById(boxId);
     if(!box) return;
     box.style.display = 'block';
+    // 使用 dataset 避免 onclick 属性中的引号破坏
     box.innerHTML = html +
-        `<button class="calc-insert-btn" onclick="copyResultToRecord(\`${resText}\`)">📋 复制结果至病历</button>` +
+        `<button class="calc-insert-btn" id="${boxId}_copyBtn">📋 复制结果至病历</button>` +
         (extraHtml || '');
+    const copyBtn = document.getElementById(`${boxId}_copyBtn`);
+    if(copyBtn){
+        copyBtn.onclick = function(){ copyResultToRecord(resText); };
+    }
 }
 
 // 1. 肌酐清除率 (Ccr) / eGFR
@@ -73,36 +78,33 @@ function calcCcr(){
     let stage = '';
     if(egfr >= 90) stage = 'CKD 1期 (肾功能正常或高滤过)';
     else if(egfr >= 60) stage = 'CKD 2期 (肾功能轻度减退)';
-    else if(egfr >= 45) stage = 'CKD 3a期 (肾功能中重度减退)';
+    else if(egfr >= 45) stage = 'CKD 3a期 (肾功能轻中度减退)';
     else if(egfr >= 30) stage = 'CKD 3b期 (肾功能中重度减退)';
     else if(egfr >= 15) stage = 'CKD 4期 (肾功能重度减退)';
     else stage = 'CKD 5期 (终末期肾病/尿毒症期)';
 
-    const resText = `【肾功能及肌酐清除率评估】\n• Cockcroft-Gault 肌酐清除率 (Ccr): ${ccr.toFixed(1)} mL/min\n• CKD-EPI (2021) 估算肾小球滤过率 (eGFR): ${egfr.toFixed(1)} mL/min/1.73m²\n• 临床分级评估: ${stage}\n• 依据标准: 人卫第10版《内科学》P522 / 中国CKD诊治指南`;
+    const resText = `【肾功能及肌酐清除率评估】\n• Cockcroft-Gault 肌酐清除率 (Ccr): ${ccr.toFixed(1)} mL/min\n• CKD-EPI (2021) 估算肾小球滤过率 (eGFR): ${egfr.toFixed(1)} mL/min/1.73m²\n• 临床分级评估: ${stage}\n• 依据标准: 人卫第10版《内科学》P522 / 中国CKD诊治指南（注：CKD分期确立需肾损害标志或病程≥3个月证据支持）`;
 
     showCalcResult('res_ccr', `<div><strong>计算结果：Ccr = ${ccr.toFixed(1)} mL/min | eGFR = ${egfr.toFixed(1)} mL/min/1.73m²</strong></div>
     <div style="margin-top:4px;color:#334155">分期提示：<b>${stage}</b></div>
     `, resText);
 }
 
-// 2. BSA 体表面积
+// 2. BSA 体表面积 (许文生中国人公式 & DuBois 标准公式)
 function calcBSA(){
     const h = parseFloat(document.getElementById('bsa_height').value);
     const w = parseFloat(document.getElementById('bsa_weight').value);
     if(!validNum(h, 30, 250, '身高') || !validNum(w, 1, 300, '体重')) return;
 
-    let bsa_xws = 0;
-    if(w <= 50) {
-        bsa_xws = 0.0061 * h + 0.0128 * w - 0.0529;
-    } else {
-        bsa_xws = 1.05 + (w - 50) * 0.012;
-    }
+    // 许文生公式: BSA = 0.0061 × 身高(cm) + 0.0128 × 体重(kg) - 0.1529
+    const bsa_xws = window.CalcCore && window.CalcCore.bsaStevenson ? window.CalcCore.bsaStevenson(h, w) : (0.0061 * h + 0.0128 * w - 0.1529);
+    // DuBois 公式: BSA = 0.007184 × 身高(cm)^0.725 × 体重(kg)^0.425
+    const bsa_dubois = window.CalcCore && window.CalcCore.bsaDubois ? window.CalcCore.bsaDubois(h, w) : (0.007184 * Math.pow(h, 0.725) * Math.pow(w, 0.425));
 
-    let bsa_dubois = 0.007184 * Math.pow(h, 0.725) * Math.pow(w, 0.425);
+    const resText = `【体表面积 BSA 测算结果】\n• 许文生中国人公式 BSA: ${bsa_xws.toFixed(2)} m²\n• DuBois 标准公式 BSA: ${bsa_dubois.toFixed(2)} m²\n• 依据标准: 人卫第10版《儿科学》P45 / 《外科学》P129（注：化疗方案与烧伤补液常用参考）`;
 
-    const resText = `【体表面积 BSA 测算结果】\n• 许文生中国人公式 BSA: ${bsa_xws.toFixed(2)} m²\n• DuBois 标准公式 BSA: ${bsa_dubois.toFixed(2)} m²\n• 依据标准: 人卫第10版《儿科学》P45 / 《外科学》P129`;
-
-    showCalcResult('res_bsa', `<div><strong>许文生公式 BSA = ${bsa_xws.toFixed(2)} m² | DuBois公式 BSA = ${bsa_dubois.toFixed(2)} m²</strong></div>
+    showCalcResult('res_bsa', `<div><strong>许文生中国人公式 BSA = ${bsa_xws.toFixed(2)} m² | DuBois 公式 BSA = ${bsa_dubois.toFixed(2)} m²</strong></div>
+    <div style="margin-top:4px;color:#334155">提示：国内临床常用许文生公式；国际肿瘤化疗方案多以 DuBois 公式为准。</div>
     `, resText);
 }
 
@@ -124,35 +126,47 @@ function calcCorrectedCa(){
     `, resText);
 }
 
-// 4. 阴离子隙 (AG) & 补钠量
+// 4. 阴离子隙 (AG) & 补钠量（含纠正速率封顶安全保护）
 function calcAG(){
     const na = parseFloat(document.getElementById('ag_na').value);
     const cl = parseFloat(document.getElementById('ag_cl').value);
     const hco3 = parseFloat(document.getElementById('ag_hco3').value);
     const gender = document.getElementById('ag_gender').value;
     const weight = parseFloat(document.getElementById('ag_weight').value);
-    if(!validNum(na, 100, 180, '血钠') || !validNum(cl, 60, 140, '血氯') || !validNum(hco3, 5, 50, '碳酸氢根') || !validNum(weight, 1, 300, '体重')) return;
+    if(!validNum(na, 80, 180, '血钠') || !validNum(cl, 50, 140, '血氯') || !validNum(hco3, 2, 50, '碳酸氢根') || !validNum(weight, 1, 300, '体重')) return;
 
     const ag = na - (cl + hco3);
     let agStatus = '';
-    if(ag > 16) agStatus = '升高 (&gt;16 mmol/L，高AG型代谢性酸中毒风险，如酮症酸中毒、乳酸酸中毒)';
-    else if(ag < 8) agStatus = '降低 (&lt;8 mmol/L，见于低白蛋白血症等)';
+    if(ag > 16) agStatus = '升高 (>16 mmol/L，高AG型代谢性酸中毒风险，如酮症酸中毒、乳酸酸中毒、水杨酸中毒、肾衰竭)';
+    else if(ag < 8) agStatus = '降低 (<8 mmol/L，见于严重低白蛋白血症、多发性骨髓瘤、高镁/高钙等)';
     else agStatus = '正常范围 (8 ~ 16 mmol/L)';
 
     let defNa = 0;
     let ns_ml = 0;
     let hyper_na_ml = 0;
+    let safeCapText = '';
     if(na < 135) {
         const factor = gender === 'female' ? 0.5 : 0.6;
-        defNa = (142 - na) * weight * factor;
+        defNa = (142 - na) * weight * factor; // 理论累计缺钠总量
         ns_ml = defNa / 0.154;
         hyper_na_ml = defNa / 0.513;
+
+        // 首日安全上限：24h 内血钠上升不超过 8~10 mmol/L（以 8mmol/L 设防），防渗透性脱髓鞘综合征(ODS)
+        const safeMaxDelta = Math.min(142 - na, 8); // 首日最大安全上升跨度
+        const safeMaxMmol = safeMaxDelta * weight * factor;
+        const safeHyperMl = safeMaxMmol / 0.513;
+        safeCapText = `\n• ⚠️ 补钠安全封顶原则：24h 内血钠上升速度切忌超过 8~10 mmol/L（高危/慢性者 ≤8 mmol/L/24h），以防脑桥中央髓鞘溶解症(ODS)。\n• 本例首日安全纠正上限（按 ΔNa=8 mmol/L 计）: 约 ${safeMaxMmol.toFixed(0)} mmol (约合 3% 高渗盐水 ${safeHyperMl.toFixed(0)} ml)，并需每 2~4h 严密监测血钠。`;
     }
 
-    const resText = `【阴离子隙 AG 与补钠评估】\n• 阴离子隙 (AG): ${ag.toFixed(1)} mmol/L (${agStatus.replace(/&gt;/g,'>').replace(/&lt;/g,'<')})\n` + (na < 135 ? `• 缺钠量估计: ${defNa.toFixed(0)} mmol (相当于 0.9%生理盐水 ${ns_ml.toFixed(0)} ml 或 3%高渗盐水 ${hyper_na_ml.toFixed(0)} ml)\n• 提示: 首日补给缺钠量的 1/2 + 生理需要量` : '• 血钠正常或偏高，无需急诊补钠。') + `\n• 依据标准: 人卫第10版《内科学》P789-792`;
+    const resText = `【阴离子隙 AG 与补钠评估】\n• 阴离子隙 (AG): ${ag.toFixed(1)} mmol/L (${agStatus})\n` +
+        (na < 135 ? `• 理论累计缺钠量: ${defNa.toFixed(0)} mmol (折合 0.9%生理盐水 ${ns_ml.toFixed(0)} ml 或 3%高渗盐水 ${hyper_na_ml.toFixed(0)} ml)\n• 首日补给策略: 首日先补理论缺钠量的 1/2 + 生理需要量，但必须遵守安全封顶！${safeCapText}` : '• 血钠正常或偏高，无需急诊补钠。') +
+        `\n• 依据标准: 人卫第10版《内科学》P789-792 / 国际低钠血症临床实践指南`;
 
     showCalcResult('res_ag', `<div><strong>阴离子隙 (AG) = ${ag.toFixed(1)} mmol/L (${agStatus})</strong></div>` +
-    (na < 135 ? `<div style="margin-top:4px">累计缺钠量: <b>${defNa.toFixed(0)} mmol</b> (相当于 0.9%NS <b>${ns_ml.toFixed(0)}ml</b> 或 3%高盐 <b>${hyper_na_ml.toFixed(0)}ml</b>)</div>` : ''), resText);
+    (na < 135 ? `<div style="margin-top:4px">理论累计缺钠量: <b>${defNa.toFixed(0)} mmol</b> (折合 0.9%NS <b>${ns_ml.toFixed(0)}ml</b> 或 3%高盐 <b>${hyper_na_ml.toFixed(0)}ml</b>)</div>
+    <div style="margin-top:6px;padding:8px;background:#fef2f2;border-left:4px solid #ef4444;border-radius:4px;font-size:12.5px;color:#991b1b">
+    <b>⚠️ 纠正速度封顶红线：</b>24小时内血钠上升<b>严格控制在 ≤ 8~10 mmol/L</b>（防渗透性脱髓鞘 ODS）。首日 3% 氯化钠建议最大用量约 <b>${(defNa * 0.5 / 0.513).toFixed(0)} ml</b>，每 2~4h 复查血钠。
+    </div>` : ''), resText);
 }
 
 // 5. Child-Pugh 肝功能评级
@@ -188,12 +202,13 @@ function calcFIB4(){
     const apri = window.CalcCore ? window.CalcCore.apri(ast, plt) : ((ast / 40) / plt) * 100;
 
     let fib4_desc = '';
-    if(fib4 < 1.45) fib4_desc = '低风险 (排除进展性肝纤维化/肝硬化 NPV>90%)';
+    const lowCut = age >= 65 ? 2.0 : 1.45; // ≥65岁老年人群调整低危截断值
+    if(fib4 < lowCut) fib4_desc = `低风险 (排除进展性肝纤维化/肝硬化，界值 <${lowCut})`;
     else if(fib4 > 3.25) fib4_desc = '高风险 (提示存在显著肝纤维化/肝硬化 PPV>65%)';
-    else fib4_desc = '灰度中风险区域 (需结合肝脏弹性剪切波超声度测量/肝穿刺评估)';
+    else fib4_desc = `灰度中风险区域 (${lowCut}~3.25，需结合肝脏瞬态弹性超声/肝穿刺评估)`;
 
     const apri_desc = apri > 2 ? '大于2，提示肝硬化风险高' : (apri < 0.5 ? '小于0.5，排除肝硬化可能性大' : '0.5~2之间，处于灰区，需结合影像学或肝穿刺进一步评估');
-    const resText = `【FIB-4 & APRI 肝纤维化评分结果】\n• FIB-4 指数: ${fib4.toFixed(2)} (${fib4_desc})\n• APRI 指数: ${apri.toFixed(2)} (${apri_desc})\n• 依据指南: 中华医学会《慢性乙型肝炎防治指南 (2022版)》/ 人卫第10版《内科学》P431`;
+    const resText = `【FIB-4 & APRI 肝纤维化评分结果】\n• FIB-4 指数: ${fib4.toFixed(2)} (${fib4_desc})\n• APRI 指数: ${apri.toFixed(2)} (${apri_desc})\n• 依据指南: 中华医学会《慢性乙型肝炎防治指南 (2022版)》/ 人卫第10版《内科学》P431 (注：≥65岁人群FIB-4低危切点调整为2.0)`;
 
     showCalcResult('res_fib', `<div><strong>FIB-4 = ${fib4.toFixed(2)} | APRI = ${apri.toFixed(2)}</strong></div>
     <div style="margin-top:4px;color:#334155">评估提示: <b>${fib4_desc}</b></div>
@@ -211,10 +226,10 @@ function calcCURB65(){
 
     let risk = '', rec = '';
     if(score <= 1) { risk = '低危 (30天死亡率 < 1.5%)'; rec = '可在门诊口服抗生素治疗'; }
-    else if(score === 2) { risk = '中危 (30天死亡率 9.2%)'; rec = '建议住院治疗或密切随访'; }
-    else { risk = '高危 (30天死亡率 22% ~ 30%)'; rec = '建议立即住院，评估是否需收入 ICU'; }
+    else if(score === 2) { risk = '中危 (30天死亡率 9.2%)'; rec = '建议短期住院观察或在密切随访下治疗'; }
+    else { risk = '高危 (30天死亡率 22% ~ 30%)'; rec = '建议立即收住院治疗，评估是否需转入 ICU'; }
 
-    const resText = `【CURB-65 社区获得性肺炎 (CAP) 重症评分】\n• 评分结果: ${score} 分 (${risk})\n• 临床处置建议: ${rec}\n• 依据指南: 人卫第10版《内科学》P48 / 《中国 CAP 诊治指南》`;
+    const resText = `【CURB-65 社区获得性肺炎 (CAP) 重症评分】\n• 评分结果: ${score} 分 (${risk})\n• 临床处置建议: ${rec}\n• 依据指南: 人卫第10版《内科学》P48 / 《中国 CAP 诊治指南》 / Lim 2003`;
 
     showCalcResult('res_curb', `<div><strong>CURB-65 得分: ${score} 分 (${risk})</strong></div>
     <div style="margin-top:4px;color:#334155">处置建议: <b>${rec}</b></div>
@@ -261,14 +276,14 @@ function calcBurnFluid(){
 
     const crystalVal = extraTotal * crystalRatio;
     const colloidVal = extraTotal * colloidRatio;
-    const baseWater = type === 'child' ? (weight * 60) : 2000;
+    const baseWater = type === 'child' ? (weight * 80) : 2000;
     const grandTotal = extraTotal + baseWater;
     const first8h = extraTotal / 2 + baseWater / 3;
 
     const resText = `【烧伤休克期首个 24h 液体复苏计划】\n• 烧伤面积: Ⅱ~Ⅲ度 ${area}% (体重 ${weight}kg)\n• 第1个 24h 额外电解质与胶体总量: ${extraTotal.toFixed(0)} ml (晶体 ${crystalVal.toFixed(0)} ml + 胶体 ${colloidVal.toFixed(0)} ml)\n• 基础水分补充量: ${baseWater.toFixed(0)} ml (5% 葡萄糖液)\n• 第1个 24h 输液总总量: ${grandTotal.toFixed(0)} ml\n• 关键医嘱: 前 8 小时内需输入额外输液量的 1/2 (${(extraTotal/2).toFixed(0)} ml) + 基础量 1/3，即前8h入量约 ${first8h.toFixed(0)} ml\n• 依据标准: 人卫第10版《外科学》P132-136`;
 
     showCalcResult('res_burn', `<div><strong>首个 24h 额外电解质胶体总入量 = ${extraTotal.toFixed(0)} ml (晶体:${crystalVal.toFixed(0)}ml, 胶体:${colloidVal.toFixed(0)}ml)</strong></div>
-    <div style="margin-top:4px;color:#334155">基础水分: ${baseWater.toFixed(0)}ml | <b>前 8 小时需快速输入额外量的 1/2 (${(extraTotal/2).toFixed(0)}ml)</b></div>
+    <div style="margin-top:4px;color:#334155">基础水分: ${baseWater.toFixed(0)}ml | <b>前 8 小时需快速输入额外量的 1/2 (${(extraTotal/2).toFixed(0)}ml) + 基础水分 1/3</b></div>
     `, resText);
 }
 
@@ -285,15 +300,17 @@ function calcPedia(){
     let ageOk = true;
     if(stage === 'm1_6' && (val < 1 || val > 6)) ageOk = false;
     else if(stage === 'm7_12' && (val < 7 || val > 12)) ageOk = false;
+    else if(stage === 'm13_24' && (val < 13 || val > 24)) ageOk = false;
     else if(stage === 'y2_12' && (val < 2 || val > 12)) ageOk = false;
     if(!ageOk){
-        if(window.showToast) window.showToast('⚠️ 年龄与所选年龄段不匹配，请核对（1~6月 / 7~12月 / 2~12岁）！');
+        if(window.showToast) window.showToast('⚠️ 年龄与所选年龄段不匹配，请核对！');
         return;
     }
 
     let estWeight = 0;
     if(stage === 'm1_6') estWeight = 3.2 + val * 0.7;
     else if(stage === 'm7_12') estWeight = 6 + val * 0.25;
+    else if(stage === 'm13_24') estWeight = 9 + (val - 12) * 0.25; // 1~2岁过渡估算
     else estWeight = val * 2 + 8;
 
     let tension = '', liquidDesc = '';
@@ -379,10 +396,10 @@ function calcFreeWaterDeficit(){
     const deficitL = factor * weight * (1 - 140 / na);
     const deficitMl = deficitL * 1000;
 
-    const resText = `【高渗性脱水/高钠血症自由水缺乏量】\n• 体重 ${weight} kg，实测血钠 ${na} mmol/L，系数 ${factor}\n• 自由水缺乏量: ${deficitL.toFixed(2)} L（公式: 0.6/0.5 × 体重 × (1 − 140/血钠)，单位升）\n• 累计缺水量: ${deficitMl.toFixed(0)} ml\n• 补液建议: 轻度可输注 5% GS 或 0.45% 氯化钠（半张盐）；血钠每小时下降不超过 0.5~1 mmol/L，24h 内血钠下降不超过 10 mmol/L，避免渗透性脱髓鞘综合征\n• 闭环提示: 若为低钠血症请使用「阴离子隙(AG)与补钠」工具计算补钠量\n• 所用液体与补液方法: 5%GS（纯自由水、无电解质）或0.45%氯化钠（半张），能口服者凉开水/白开水；轻症口服、重症静脉；血钠每小时下降≤0.5-1mmol/L、24h≤10mmol/L（防渗透性脱髓鞘）；先补计算缺乏量的1/2分次补充，2-3日逐渐纠正，每2-4h复查血钠\n• 依据指南: 人卫第10版《内科学》高钠血症治疗 / 《哈里森内科学》`;
+    const resText = `【高渗性脱水/高钠血症自由水缺乏量】\n• 体重 ${weight} kg，实测血钠 ${na} mmol/L，系数 ${factor}\n• 自由水缺乏量: ${deficitL.toFixed(2)} L（公式: 0.6/0.5 × 体重 × (1 − 140/血钠)，单位升）\n• 累计缺水量: ${deficitMl.toFixed(0)} ml\n• 补液建议: 轻度可输注 5% GS 或 0.45% 氯化钠（半张盐）；血钠每小时下降不超过 0.5~1 mmol/L，24h 内血钠下降不超过 10 mmol/L，避免脑水肿\n• 闭环提示: 若为低钠血症请使用「阴离子隙(AG)与补钠」工具计算补钠量\n• 所用液体与补液方法: 5%GS（纯自由水、无电解质）或0.45%氯化钠（半张），能口服者凉开水/白开水；轻症口服、重症静脉；血钠每小时下降≤0.5-1mmol/L、24h≤10mmol/L；先补计算缺乏量的1/2分次补充，2-3日逐渐纠正，每2-4h复查血钠\n• 依据指南: 人卫第10版《内科学》高钠血症治疗 / 《哈里森内科学》`;
 
     showCalcResult('res_fwdeficit', `<div><strong>自由水缺乏量 = ${deficitL.toFixed(2)} L（累计缺水量 ${deficitMl.toFixed(0)} ml）</strong></div>
-    <div style="margin-top:4px;color:#334155">💡 血钠每小时下降 ≤ 0.5~1 mmol/L，24h 内下降 ≤ 10 mmol/L（防渗透性脱髓鞘）</div>
+    <div style="margin-top:4px;color:#334155">💡 血钠每小时下降 ≤ 0.5~1 mmol/L，24h 内下降 ≤ 10 mmol/L（防脑水肿）</div>
     <div style="margin-top:4px;color:#334155">🧪 所用液体与补液方法: 5%GS或0.45%氯化钠（半张）；先补计算缺乏量的1/2分次补充，2-3日逐渐纠正，每2-4h复查血钠</div>`, resText);
 }
 
@@ -484,7 +501,7 @@ function calcPReplacement(){
     <div style="margin-top:4px;color:#334155">🧪 所用液体与补液方法: 甘油磷酸钠加入 0.9%NS/5%GS 缓慢静滴；口服磷酸盐优先</div>`, resText);
 }
 
-// 11. MELD 终末期肝病评分
+// 11. MELD 终末期肝病评分（含肌酐 4.0 截断与标准死亡率阶梯）
 function calcMELD(){
     const tbil = parseFloat(document.getElementById('meld_tbil').value);
     const inr = parseFloat(document.getElementById('meld_inr').value);
@@ -492,47 +509,61 @@ function calcMELD(){
     const dialysis = document.getElementById('meld_dialysis').value;
     if(!validNum(tbil, 1, 1000, '总胆红素') || !validNum(inr, 0.5, 10, 'INR') || !validNum(scr, 10, 2000, '血肌酐')) return;
 
-    const tbil_mg = tbil / 17.1;
-    let scr_mg = scr / 88.4;
-    if(dialysis === 'yes') scr_mg = 4.0;
-
-    let meld = 3.78 * Math.log(Math.max(tbil_mg, 1)) + 11.2 * Math.log(Math.max(inr, 1)) + 9.57 * Math.log(Math.max(scr_mg, 1)) + 6.43;
-    meld = Math.round(meld);
-    if(meld < 6) meld = 6;
-    if(meld > 40) meld = 40;
+    const meld = window.CalcCore && window.CalcCore.meldScore
+        ? window.CalcCore.meldScore(tbil, inr, scr, dialysis === 'yes')
+        : (function(){
+            const tbil_mg = tbil / 17.1;
+            let scr_mg = scr / 88.4;
+            if(dialysis === 'yes' || scr_mg > 4.0) scr_mg = 4.0;
+            let s = 3.78 * Math.log(Math.max(tbil_mg, 1)) + 11.2 * Math.log(Math.max(inr, 1)) + 9.57 * Math.log(Math.max(scr_mg, 1)) + 6.43;
+            s = Math.round(s);
+            if(s < 6) s = 6; if(s > 40) s = 40;
+            return s;
+        })();
 
     let risk = '';
-    if(meld < 15) risk = '低风险 — 3个月死亡率约 1.9%~6.0%';
-    else if(meld < 20) risk = '中风险 — 3个月死亡率约 6.0%~19.6%';
-    else if(meld < 30) risk = '高风险 — 3个月死亡率约 19.6%~52.6%';
-    else risk = '极高风险 — 3个月死亡率 > 52.6%，建议肝移植评估';
+    if(meld <= 9) risk = '低风险 — 3个月死亡率约 1.9%';
+    else if(meld <= 19) risk = '中低风险 — 3个月死亡率约 6.0%';
+    else if(meld <= 29) risk = '中高风险 — 3个月死亡率约 19.6%';
+    else if(meld <= 39) risk = '高风险 — 3个月死亡率约 52.6%';
+    else risk = '极高危 — 3个月死亡率约 71.3%，建议紧急肝移植评估';
 
-    const resText = `【MELD 终末期肝病评分】\n• MELD 评分: ${meld} 分\n• 风险评估: ${risk}\n• 依据标准: 人卫第10版《内科学》P433 / UNOS肝移植分配标准`;
+    const resText = `【MELD 终末期肝病评分】\n• MELD 评分: ${meld} 分\n• 风险评估: ${risk}\n• 依据标准: 人卫第10版《内科学》P433 / UNOS 肝移植器官分配标准（Kamath 等 2001，Scr上限截断4.0mg/dL）`;
 
     showCalcResult('res_meld', `<div><strong>MELD 评分 = ${meld} 分</strong></div>
     <div style="margin-top:4px;color:#334155">${risk}</div>
     `, resText);
 }
 
-// 12. Wells PE 肺栓塞评分
+// 12. Wells PE 肺栓塞评分（原版完整 7 项，满分 12.5 分）
 function calcWellsPE(){
     let score = 0;
-    if(document.getElementById('wpe_1').checked) score += 3;
-    if(document.getElementById('wpe_2').checked) score += 1.5;
-    if(document.getElementById('wpe_3').checked) score += 1.5;
-    if(document.getElementById('wpe_4').checked) score += 1.5;
-    if(document.getElementById('wpe_5').checked) score += 1;
-    if(document.getElementById('wpe_6').checked) score += 1;
+    if(document.getElementById('wpe_0') && document.getElementById('wpe_0').checked) score += 3; // DVT 临床体征（肿胀+深静脉压痛）
+    if(document.getElementById('wpe_1').checked) score += 3;   // PE 最可能诊断
+    if(document.getElementById('wpe_2').checked) score += 1.5; // HR > 100
+    if(document.getElementById('wpe_3').checked) score += 1.5; // 4周内制动或手术
+    if(document.getElementById('wpe_4').checked) score += 1.5; // 既往 DVT/PE
+    if(document.getElementById('wpe_5').checked) score += 1;   // 咯血
+    if(document.getElementById('wpe_6').checked) score += 1;   // 恶性肿瘤
 
-    let risk = '';
-    if(score <= 2) risk = '低危 (PE概率约 1.3%~6.0%) — 可考虑D-二聚体排除';
-    else if(score <= 6) risk = '中危 (PE概率约 21.0%) — 建议CTPA确诊';
-    else risk = '高危 (PE概率约 50.0%) — 紧急CTPA或V/Q显像，必要时溶栓/取栓';
+    let risk = '', rec = '';
+    // ESC 2019 / 中国 PTE 指南三分法与两分法
+    if(score <= 1.5) {
+        risk = '低危 (PE 可能性小，概率约 1.3%~3.4%)';
+        rec = '建议行高敏 D-二聚体检测；若阴性可安全排除 PE，无需 CTPA。';
+    } else if(score <= 6) {
+        risk = '中危 (PE 可能性中等，概率约 16.2%~28%)';
+        rec = '建议行高敏 D-二聚体或直接行 CT 肺动脉造影(CTPA)确诊。';
+    } else {
+        risk = '高危 (PE 可能性大，概率约 37.5%~65%)';
+        rec = '强烈建议直接行急诊 CTPA 确诊；血流动力学不稳定者启动急诊溶栓或经导管取栓评估。';
+    }
 
-    const resText = `【Wells 肺栓塞(PE)风险评分】\n• Wells PE 评分: ${score} 分\n• 风险评估: ${risk}\n• 依据标准: 人卫第10版《内科学》P67 / ESC肺栓塞指南`;
+    const resText = `【Wells 肺栓塞(PE)风险评分】\n• Wells PE 评分: ${score} 分 (满分 12.5 分)\n• 风险评估: ${risk}\n• 临床处置建议: ${rec}\n• 依据标准: 人卫第10版《内科学》P67 / ESC 2019 急性肺栓塞诊治指南`;
 
     showCalcResult('res_wpe', `<div><strong>Wells PE 评分 = ${score} 分</strong></div>
-    <div style="margin-top:4px;color:#334155">${risk}</div>
+    <div style="margin-top:4px;color:#334155"><b>${risk}</b></div>
+    <div style="margin-top:4px;color:#334155">💡 临床建议：${rec}</div>
     `, resText);
 }
 
@@ -558,20 +589,31 @@ function calcGCS(){
 
     showCalcResult('res_gcs', `<div><strong>GCS = E${eye}V${verbal}M${motor} = ${total} 分</strong></div>
     <div style="margin-top:4px;color:#334155">${severity}</div>
-    
     `, resText, `<button class="calc-insert-btn" onclick="printAssessmentResult('gcs')">🖨️ 打印</button>`);
 }
 
-// 14. Caprini 围手术期DVT风险评估
+// 14. Caprini 围手术期VTE风险评估（按 2005/2013 标准版赋分）
 function calcCaprini(){
     let score = 0;
-    const checks = [
-        ['caprini_1', 1], ['caprini_2', 1], ['caprini_3', 1], ['caprini_4', 1],
-        ['caprini_5', 2], ['caprini_6', 2], ['caprini_7', 2], ['caprini_8', 2],
-        ['caprini_9', 3], ['caprini_10', 3], ['caprini_11', 5], ['caprini_12', 4]
-    ];
-    checks.forEach(([id, pts]) => {
-        if(document.getElementById(id).checked){ score += pts; }
+    // 1分项
+    ['caprini_1','caprini_2','caprini_3','caprini_4','caprini_13','caprini_14'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el && el.checked) score += 1;
+    });
+    // 2分项
+    ['caprini_5','caprini_6','caprini_7','caprini_8','caprini_10','caprini_15'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el && el.checked) score += 2;
+    });
+    // 3分项
+    ['caprini_9','caprini_12','caprini_16'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el && el.checked) score += 3;
+    });
+    // 5分项
+    ['caprini_11'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el && el.checked) score += 5;
     });
 
     const info = getPtInfo('caprini');
@@ -581,30 +623,36 @@ function calcCaprini(){
     }
 
     let risk = '', recommendation = '';
-    if(score <= 1){ risk = '极低危 (DVT发生率 < 0.5%)'; recommendation = '早期活动，无需药物预防'; }
-    else if(score <= 2){ risk = '低危 (DVT发生率约 1.5%)'; recommendation = '推荐基础预防（早期活动 + 弹力袜）'; }
+    if(score <= 1){ risk = '极低危 (DVT发生率 < 0.5%)'; recommendation = '早期下床活动，通常无需药物或机械预防'; }
+    else if(score === 2){ risk = '低危 (DVT发生率约 1.5%)'; recommendation = '推荐基础预防（早期活动 + 抗栓弹力袜 GCS 或间歇充气加压装置 IPC）'; }
     else if(score <= 4){ risk = '中危 (DVT发生率约 3.0%)'; recommendation = '建议药物预防（低分子肝素/普通肝素），或机械预防（IPC）'; }
-    else{ risk = '高危/极高危 (DVT发生率 ≥ 6.0%)'; recommendation = '强烈推荐药物 + 机械联合预防，术后尽早启动抗凝'; }
+    else { risk = '高危/极高危 (DVT发生率 ≥ 6.0%)'; recommendation = '强烈推荐药物 + 机械联合预防（LMWH + IPC/GCS），术后尽早启动抗凝'; }
 
-    const resText = `【Caprini 围手术期DVT风险评估】\n${patientInfo}\n• Caprini 总分: ${score} 分\n• 风险等级: ${risk}\n• 预防建议: ${recommendation}\n• 评估时间: ${info.date}\n• 依据标准: 人卫第10版《外科学》P542-543 / ACCP血栓预防指南`;
+    const resText = `【Caprini 围手术期VTE风险评估】\n${patientInfo}\n• Caprini 总分: ${score} 分\n• 风险等级: ${risk}\n• 预防建议: ${recommendation}\n• 评估时间: ${info.date}\n• 依据标准: Caprini RAM 2005/2013 / 人卫第10版《外科学》P542-543 / ACCP 血栓预防指南`;
 
     showCalcResult('res_caprini', `<div><strong>Caprini 评分 = ${score} 分</strong></div>
     <div style="margin-top:4px;color:#334155"><b>${risk}</b></div>
     <div style="margin-top:6px;padding:8px;background:#f0fdf4;border-radius:6px;font-size:13px">💡 ${recommendation}</div>
-    
     `, resText, `<button class="calc-insert-btn" onclick="printAssessmentResult('caprini')">🖨️ 打印</button>`);
 }
 
-// 15. Padua 内科住院患者VTE风险评估
+// 15. Padua 内科住院患者VTE风险评估（按 Barbar 2010 原版 11 项赋分）
 function calcPadua(){
     let score = 0;
-    const checks = [
-        ['padua_1', 3], ['padua_2', 3], ['padua_3', 2], ['padua_4', 3],
-        ['padua_5', 2], ['padua_6', 1], ['padua_7', 1], ['padua_8', 1],
-        ['padua_9', 1], ['padua_10', 1], ['padua_11', 1], ['padua_12', 1]
-    ];
-    checks.forEach(([id, pts]) => {
-        if(document.getElementById(id).checked) score += pts;
+    // 3分项 (活动性肿瘤、既往VTE、活动受限≥3天、已知易栓症)
+    ['padua_1','padua_2','padua_3','padua_4'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el && el.checked) score += 3;
+    });
+    // 2分项 (近期≤1月创伤或大手术)
+    ['padua_5'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el && el.checked) score += 2;
+    });
+    // 1分项 (高龄≥70、心衰/呼衰、急性心梗/缺血脑卒中、急性感染/风湿病、肥胖BMI≥30、正在进行激素治疗)
+    ['padua_6','padua_7','padua_8','padua_9','padua_10','padua_11'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el && el.checked) score += 1;
     });
 
     const info = getPtInfo('padua');
@@ -614,15 +662,19 @@ function calcPadua(){
     }
 
     let risk = '', recommendation = '';
-    if(score >= 4){ risk = '高危 (VTE发生率约 11.0%)'; recommendation = '强烈推荐药物预防（低分子肝素），除非有禁忌证；建议评估出血风险；早期下床活动+机械预防（弹力袜/IPC）'; }
-    else{ risk = '低危 (VTE发生率约 0.6%~1.7%)'; recommendation = '推荐基础预防（早期活动、弹力袜），评估是否需要药物预防'; }
+    if(score >= 4){
+        risk = '高危 (VTE发生率约 11.0% 未预防时)';
+        recommendation = '强烈推荐药物预防（低分子肝素皮下注射），需先行出血风险评估；同时联合早期下床活动与机械预防（IPC/弹力袜）。';
+    } else {
+        risk = '低危 (VTE发生率约 0.3%~1.7%)';
+        recommendation = '推荐基础预防：鼓励早期下床活动、保持水化；通常无需常规药物抗凝。';
+    }
 
-    const resText = `【Padua 内科住院患者VTE风险评估】\n${patientInfo}\n• Padua 总分: ${score} 分\n• 风险等级: ${risk}\n• 预防建议: ${recommendation}\n• 评估时间: ${info.date}\n• 依据标准: 人卫第10版《内科学》P71 / 中华医学会血栓防治指南`;
+    const resText = `【Padua 内科住院患者VTE风险评估】\n${patientInfo}\n• Padua 总分: ${score} 分 (高危界值 ≥ 4分)\n• 风险等级: ${risk}\n• 预防建议: ${recommendation}\n• 评估时间: ${info.date}\n• 依据标准: Barbar 等 2010 (JTH) / 人卫第10版《内科学》P71 / 中华医学会 VTE 防治指南`;
 
-    showCalcResult('res_padua', `<div><strong>Padua 评分 = ${score} 分</strong></div>
+    showCalcResult('res_padua', `<div><strong>Padua 评分 = ${score} 分（${score >= 4 ? '<span style="color:#b91c1c">≥4分 高危</span>' : '<span style="color:#15803d">&lt;4分 低危</span>'}）</strong></div>
     <div style="margin-top:4px;color:#334155"><b>${risk}</b></div>
     <div style="margin-top:6px;padding:8px;background:#f0fdf4;border-radius:6px;font-size:13px">💡 ${recommendation}</div>
-    
     `, resText, `<button class="calc-insert-btn" onclick="printAssessmentResult('padua')">🖨️ 打印</button>`);
 }
 
@@ -644,7 +696,7 @@ function calcHuntHess(){
     `, resText);
 }
 
-// 17. CHA2DS2-VASc 房颤血栓评分
+// 17. CHA2DS2-VASc 房颤血栓评分（含女性单性别分豁免逻辑）
 function calcCHADS(){
     let score = 0;
     if(document.getElementById('chads_c').checked) score += 1;
@@ -654,17 +706,29 @@ function calcCHADS(){
     if(document.getElementById('chads_s2').checked) score += 2;
     if(document.getElementById('chads_v').checked) score += 1;
     if(document.getElementById('chads_a65').checked) score += 1;
-    if(document.getElementById('chads_sex').checked) score += 1;
+    const isFemale = document.getElementById('chads_sex').checked;
+    if(isFemale) score += 1;
 
-    let risk = '';
-    if(score === 0) risk = '低风险 — 年卒中率约 0.2%，可不抗凝(男性)';
-    else if(score === 1) risk = '中风险 — 年卒中率约 0.6%~1.3%，考虑抗凝';
-    else risk = '高风险 — 年卒中率 ≥ 1.9%，推荐口服抗凝药(NOAC/华法林)';
+    // 除女性性别外的非性别危险因素得分 (Non-sex score)
+    const nonSexScore = isFemale ? (score - 1) : score;
 
-    const resText = `【CHA₂DS₂-VASc 房颤血栓风险评分】\n• CHA₂DS₂-VASc 评分: ${score} 分\n• 风险评估: ${risk}\n• 依据标准: 人卫第10版《内科学》P209 / ESC房颤管理指南`;
+    let risk = '', rec = '';
+    if(nonSexScore === 0){
+        risk = isFemale ? '低风险 (女性单性别因素，年卒中率与男性0分相当约0.2%)' : '低风险 (年卒中率约 0.2%)';
+        rec = '不推荐抗凝药物或抗血小板治疗。';
+    } else if(nonSexScore === 1){
+        risk = '中风险 (年卒中率约 0.6%~1.3%)';
+        rec = '考虑口服抗凝药 (NOAC 优先 / 华法林，类推荐 Ⅱa)。';
+    } else {
+        risk = `高风险 (除性别外得分 ${nonSexScore} 分，年卒中率 ≥ 1.9%)`;
+        rec = '强烈推荐口服抗凝治疗 (NOAC 如阿哌沙班/达比加群/利伐沙班优先，类推荐 ⅠA)。';
+    }
 
-    showCalcResult('res_chads', `<div><strong>CHA₂DS₂-VASc 评分 = ${score} 分</strong></div>
-    <div style="margin-top:4px;color:#334155">${risk}</div>
+    const resText = `【CHA₂DS₂-VASc 房颤血栓风险评分】\n• CHA₂DS₂-VASc 总分: ${score} 分 (非性别危险因素: ${nonSexScore} 分)\n• 风险评估: ${risk}\n• 抗凝策略: ${rec}\n• 依据标准: ESC 2020 房颤管理指南 / 《中国心房颤动管理指南 (2024版)》/ 人卫第10版《内科学》P209`;
+
+    showCalcResult('res_chads', `<div><strong>CHA₂DS₂-VASc 评分 = ${score} 分 (非性别得分: ${nonSexScore} 分)</strong></div>
+    <div style="margin-top:4px;color:#334155">风险判定：<b>${risk}</b></div>
+    <div style="margin-top:4px;color:#0e7490">💊 处置建议：${rec}</div>
     `, resText);
 }
 
@@ -676,10 +740,10 @@ function calcQSOFA(){
     if(document.getElementById('qsofa_3').checked) score += 1;
 
     let risk = '';
-    if(score >= 2) risk = '高风险 — 院内死亡概率显著增加，需收入ICU并按脓毒症集束化治疗';
-    else risk = '低风险 — 暂不满足qSOFA阳性标准，但需动态监测';
+    if(score >= 2) risk = '高风险 (≥2分 提示不良预后) — 院内死亡率显著升高，需立即筛查器官功能衰竭(SOFA评分)并启动脓毒症集束化治疗';
+    else risk = '低风险 (<2分) — 暂不满足 qSOFA 阳性，但临床高度疑诊感染时需动态连续评估';
 
-    const resText = `【qSOFA 快速脓毒症器官衰竭评估】\n• qSOFA 评分: ${score} / 3 分\n• 风险评估: ${risk}\n• 依据标准: 人卫第10版《内科学》P148 / 拯救脓毒症运动(SSC)2021指南`;
+    const resText = `【qSOFA 快速脓毒症器官衰竭评估】\n• qSOFA 评分: ${score} / 3 分\n• 风险评估: ${risk}\n• 依据标准: Sepsis-3 共识 / SSC 2021 国际脓毒症指南 / 人卫第10版《内科学》P148`;
 
     showCalcResult('res_qsofa', `<div><strong>qSOFA 评分 = ${score} / 3 分</strong></div>
     <div style="margin-top:4px;color:#334155">${risk}</div>
@@ -696,12 +760,12 @@ function calcMEWS(){
     const total = sbp + hr + rr + avpu + temp;
 
     let level = '';
-    if(total < 4) level = '低风险 — 常规监测，每4~6小时复评';
-    else if(total < 5) level = '中等风险 — 增加监测频次，通知上级医师';
-    else if(total < 7) level = '高风险 — 需紧急呼叫医师评估，考虑转ICU';
-    else level = '极高风险 — 立即启动抢救，转入ICU';
+    if(total < 4) level = '低风险 (0~3分) — 常规病房监测，每4~6小时复评';
+    else if(total < 5) level = '中等风险 (4分) — 增加监测频次，通知主管医师评估处理';
+    else if(total < 7) level = '高风险 (5~6分 警戒红线) — 需紧急床旁会诊，准备重症监护救治';
+    else level = '极高风险 (≥7分) — 立即启动抢救通道，紧急转入 ICU';
 
-    const resText = `【MEWS 改良早期预警评分】\n• 收缩压: ${sbp} | 心率: ${hr} | 呼吸: ${rr} | 意识: ${avpu} | 体温: ${temp}\n• MEWS 总分: ${total} 分\n• 风险等级: ${level}\n• 依据标准: 中华医学会重症医学分会 / 人卫第10版《内科学》急危重症章节`;
+    const resText = `【MEWS 改良早期预警评分】\n• 收缩压: ${sbp} | 心率: ${hr} | 呼吸: ${rr} | 意识: ${avpu} | 体温: ${temp}\n• MEWS 总分: ${total} 分\n• 风险等级: ${level}\n• 依据标准: Subbe 等 2001 / 中华医学会重症医学分会 / 人卫第10版《内科学》急危重症`;
 
     showCalcResult('res_mews', `<div><strong>MEWS 总分 = ${total} 分</strong></div>
     <div style="margin-top:4px;color:#334155">${level}</div>
@@ -716,11 +780,11 @@ function calcTIMI(){
     }
 
     let risk = '';
-    if(score <= 2) risk = '低风险 — 14天复合终点(死亡/心梗/紧急血运重建)约 4.7%~8.3%';
+    if(score <= 2) risk = '低风险 — 14天复合终点(全因死亡/心梗/紧急血运重建)约 4.7%~8.3%';
     else if(score <= 4) risk = '中风险 — 14天复合终点约 13.2%~19.9%，建议早期侵入策略';
     else risk = '高风险 — 14天复合终点约 26.2%~40.9%，推荐24~48h内冠脉造影+PCI';
 
-    const resText = `【TIMI UA/NSTEMI 风险评分】\n• TIMI 评分: ${score} / 7 分\n• 风险评估: ${risk}\n• 依据标准: 人卫第10版《内科学》P243 / ACC/AHA NSTE-ACS指南`;
+    const resText = `【TIMI UA/NSTEMI 风险评分】\n• TIMI 评分: ${score} / 7 分\n• 风险评估: ${risk}\n• 依据标准: 人卫第10版《内科学》P243 / ACC/AHA NSTE-ACS指南 / Antman 2000`;
 
     showCalcResult('res_timi', `<div><strong>TIMI 评分 = ${score} / 7 分</strong></div>
     <div style="margin-top:4px;color:#334155">${risk}</div>
@@ -735,8 +799,12 @@ function calcQTc(){
     if(!validNum(qt, 200, 700, 'QT间期') || !validNum(hr, 20, 250, '心率')) return;
     const qtc = CalcCore.qtcBazett(qt, hr);
     const limit = gender === 'female' ? 460 : 450;
-    const status = qtc > limit ? '延长（QTc > ' + limit + ' ms）' : '正常范围';
-    const resText = `【QTc 校正QT间期（Bazett）】\n• QT: ${qt} ms，心率: ${hr} 次/分\n• QTc: ${qtc.toFixed(0)} ms（${status}）\n• 依据标准: Bazett 公式，QTc=${qt}/√(60/HR)`;
+    let status = '';
+    if(qtc > 500) status = '严重延长 (QTc > 500 ms，尖端扭转型室速 TdP 高危，需立即排查低钾/低镁及致长QT药物)';
+    else if(qtc > limit) status = '延长（QTc > ' + limit + ' ms）';
+    else status = '正常范围';
+
+    const resText = `【QTc 校正QT间期（Bazett）】\n• QT: ${qt} ms，心率: ${hr} 次/分 (${gender === 'female' ? '女性' : '男性'})\n• QTc: ${qtc.toFixed(0)} ms（${status}）\n• 依据标准: Bazett 公式，QTc=${qt}/√(60/HR)（正常上限：男450ms / 女460ms；>500ms预警TdP）`;
     showCalcResult('res_qtc', `<div><strong>QTc = ${qtc.toFixed(0)} ms（${status}）</strong></div>`, resText);
 }
 
@@ -747,8 +815,8 @@ function calcMAP(){
     if(!validNum(sbp, 50, 300, '收缩压') || !validNum(dbp, 30, 200, '舒张压')) return;
     if(sbp <= dbp){ if(window.showToast) window.showToast('⚠️ 收缩压应高于舒张压，请核对！'); return; }
     const map = CalcCore.mapArterial(sbp, dbp);
-    const status = map >= 65 ? '达标（≥65 mmHg）' : '偏低（<65 mmHg，需关注灌注）';
-    const resText = `【平均动脉压 MAP】\n• 收缩压 ${sbp} mmHg，舒张压 ${dbp} mmHg\n• MAP: ${map.toFixed(0)} mmHg（${status}）\n• 依据标准: MAP = DBP + (SBP-DBP)/3`;
+    const status = map >= 65 ? '达标（≥65 mmHg，脏器灌注基本有保障）' : '偏低（<65 mmHg，组织器官灌注不足风险，需警惕休克）';
+    const resText = `【平均动脉压 MAP】\n• 收缩压 ${sbp} mmHg，舒张压 ${dbp} mmHg\n• MAP: ${map.toFixed(0)} mmHg（${status}）\n• 依据标准: MAP = DBP + (SBP-DBP)/3 (重症休克复苏目标常以 MAP≥65 mmHg 为基准)`;
     showCalcResult('res_map', `<div><strong>MAP = ${map.toFixed(0)} mmHg（${status}）</strong></div>`, resText);
 }
 
@@ -757,21 +825,32 @@ function calcSOFA(){
     const items = ['sofa_resp','sofa_coag','sofa_liver','sofa_cv','sofa_neuro','sofa_renal'].map(id => parseInt(document.getElementById(id).value || '0', 10));
     const total = CalcCore.sofaScore({resp:items[0], coag:items[1], liver:items[2], cardiovascular:items[3], neuro:items[4], renal:items[5]});
     if(isNaN(total)){ if(window.showToast) window.showToast('⚠️ 请完整填写各分项！'); return; }
-    const status = total >= 2 ? '提示存在器官功能障碍' : '暂未达 SOFA≥2 标准';
-    const resText = `【SOFA 序贯器官衰竭评分】\n• 呼吸 ${items[0]} 分，凝血 ${items[1]} 分，肝 ${items[2]} 分，循环 ${items[3]} 分，神经 ${items[4]} 分，肾 ${items[5]} 分\n• SOFA 总分: ${total} 分（${status}）\n• 依据标准: Vincent 等 1996 / SSC 指南`;
+    const status = total >= 2 ? '符合脓毒症器官功能障碍标准 (SOFA相比基线≥2分)' : '暂未达 SOFA≥2 器官衰竭标准';
+    const resText = `【SOFA 序贯器官衰竭评分】\n• 呼吸 ${items[0]} 分，凝血 ${items[1]} 分，肝 ${items[2]} 分，循环 ${items[3]} 分，神经 ${items[4]} 分，肾 ${items[5]} 分\n• SOFA 总分: ${total} 分（${status}）\n• 依据标准: Vincent 等 1996 / Sepsis-3 指南`;
     showCalcResult('res_sofa', `<div><strong>SOFA = ${total} 分（${status}）</strong></div>`, resText);
 }
 
-// 26. GRACE 评分
+// 26. GRACE 评分（智能兼容 mg/dL 与 μmol/L）
 function calcGRACE(){
     const age = parseFloat(document.getElementById('grace_age').value);
     const hr = parseFloat(document.getElementById('grace_hr').value);
     const sbp = parseFloat(document.getElementById('grace_sbp').value);
-    const cr = parseFloat(document.getElementById('grace_cr').value);
+    let cr = parseFloat(document.getElementById('grace_cr').value);
     const killip = parseInt(document.getElementById('grace_killip').value || '1', 10);
-    if(!validNum(age, 20, 120, '年龄') || !validNum(hr, 20, 250, '心率') || !validNum(sbp, 50, 250, '收缩压') || !validNum(cr, 0.1, 20, '肌酐(mg/dL)')) return;
+    if(!validNum(age, 20, 120, '年龄') || !validNum(hr, 20, 250, '心率') || !validNum(sbp, 50, 250, '收缩压')) return;
+
+    // 智能识别：若输入的肌酐 > 30，判断为国内常用的 μmol/L，自动换算为 mg/dL
+    let crMg = cr;
+    let unitPrompt = '';
+    if(cr > 30){
+        crMg = cr / 88.4;
+        unitPrompt = ` (按 ${cr} μmol/L 自动换算为 ${crMg.toFixed(2)} mg/dL)`;
+    } else {
+        if(!validNum(cr, 0.1, 20, '肌酐(mg/dL)')) return;
+    }
+
     const score = CalcCore.graceScore({
-        age, hr, sbp, creatinineMg: cr, killip,
+        age, hr, sbp, creatinineMg: crMg, killip,
         cardiacArrest: document.getElementById('grace_ca').checked,
         stDeviation: document.getElementById('grace_st').checked,
         elevatedEnzymes: document.getElementById('grace_enz').checked
@@ -779,12 +858,12 @@ function calcGRACE(){
     let risk = '';
     if(score <= 108) risk = '低危（院内死亡风险 <1%）';
     else if(score <= 140) risk = '中危（院内死亡风险 1%~3%）';
-    else risk = '高危（院内死亡风险 >3%，建议早期侵入策略）';
-    const resText = `【GRACE ACS 风险评分】\n• GRACE 评分: ${score} 分\n• 风险评估: ${risk}\n• 依据标准: GRACE 2.0/1.0 风险模型`;
-    showCalcResult('res_grace', `<div><strong>GRACE = ${score} 分（${risk}）</strong></div>`, resText);
+    else risk = '高危（院内死亡风险 >3%，建议 24h 内早期侵入策略）';
+    const resText = `【GRACE ACS 风险评分】\n• GRACE 评分: ${score} 分${unitPrompt}\n• 风险评估: ${risk}\n• 依据标准: GRACE 风险模型 / ESC 2020 NSTE-ACS 指南`;
+    showCalcResult('res_grace', `<div><strong>GRACE = ${score} 分（${risk}）</strong></div>${unitPrompt ? '<div style="font-size:12px;color:#64748b">'+unitPrompt+'</div>' : ''}`, resText);
 }
 
-// 27. Glasgow-Blatchford 评分
+// 27. Glasgow-Blatchford 评分（含呕血项）
 function calcBlatchford(){
     const gender = document.getElementById('gb_gender').value;
     const bun = parseFloat(document.getElementById('gb_bun').value);
@@ -797,14 +876,17 @@ function calcBlatchford(){
         melena: document.getElementById('gb_melena').checked,
         syncope: document.getElementById('gb_syncope').checked,
         liverDisease: document.getElementById('gb_liver').checked,
-        heartFailure: document.getElementById('gb_hf').checked
+        heartFailure: document.getElementById('gb_hf').checked,
+        hematemesis: document.getElementById('gb_hematemesis') ? document.getElementById('gb_hematemesis').checked : false
     });
-    let risk = '';
-    if(score === 0) risk = '低危（可考虑门诊管理）';
-    else if(score < 6) risk = '中危（建议住院观察）';
-    else risk = '高危（建议急诊内镜及积极干预）';
-    const resText = `【Glasgow-Blatchford 上消化道出血评分】\n• 评分: ${score} 分\n• 风险评估: ${risk}\n• 依据标准: Blatchford 等 2000`;
-    showCalcResult('res_gb', `<div><strong>Blatchford = ${score} 分（${risk}）</strong></div>`, resText);
+    let risk = '', rec = '';
+    if(score === 0) { risk = '极低危 (需内镜下止血/输血干预概率 < 0.5%)'; rec = '可在门诊安全管理，择期内镜检查。'; }
+    else if(score <= 1) { risk = '低危 (部分指南认可 ≤1 分门诊评估)'; rec = '可考虑密切门诊随访。'; }
+    else if(score < 6) { risk = '中危'; rec = '建议住院观察治疗，安排择期内镜。'; }
+    else { risk = '高危 (需要输血、急诊内镜或手术干预概率高)'; rec = '建议急诊内镜止血、建立静脉大通道补液扩容及积极干预。'; }
+
+    const resText = `【Glasgow-Blatchford 上消化道出血评分】\n• 评分: ${score} 分\n• 风险评估: ${risk}\n• 处置建议: ${rec}\n• 依据标准: Blatchford 等 2000 (Lancet) / 急性上消化道出血急诊诊治专家共识`;
+    showCalcResult('res_gb', `<div><strong>Blatchford = ${score} 分（${risk}）</strong></div><div style="margin-top:4px;color:#334155">💡 建议：${rec}</div>`, resText);
 }
 
 // 28. NIHSS 评分
@@ -814,12 +896,12 @@ function calcNIHSS(){
     const total = CalcCore.nihssScore(vals);
     if(isNaN(total)){ if(window.showToast) window.showToast('⚠️ 请完整填写各分项！'); return; }
     let severity = '';
-    if(total === 0) severity = '无卒中症状';
-    else if(total <= 4) severity = '轻型';
-    else if(total <= 15) severity = '中型';
-    else if(total <= 20) severity = '中重型';
-    else severity = '重型';
-    const resText = `【NIHSS 美国国立卫生研究院卒中量表】\n• NIHSS 总分: ${total} / 42 分（${severity}）\n• 依据标准: NIHSS 1989`;
+    if(total === 0) severity = '无卒中症状 (0分)';
+    else if(total <= 4) severity = '轻型卒中 (1~4分)';
+    else if(total <= 15) severity = '中型卒中 (5~15分)';
+    else if(total <= 20) severity = '中重型卒中 (16~20分)';
+    else severity = '重型卒中 (21~42分)';
+    const resText = `【NIHSS 美国国立卫生研究院卒中量表】\n• NIHSS 总分: ${total} / 42 分（${severity}）\n• 依据标准: NIHSS 1989 / AHA/ASA 急性缺血性脑卒中指南`;
     showCalcResult('res_nihss', `<div><strong>NIHSS = ${total} / 42 分（${severity}）</strong></div>`, resText);
 }
 
@@ -842,12 +924,12 @@ function getPtInfo(prefix){
     if(!dateVal) dateVal = new Date().toLocaleString('zh-CN', {hour12:false});
 
     return {
-        name: document.getElementById(prefix+'_pt_name').value.trim(),
-        gender: document.getElementById(prefix+'_pt_gender').value,
-        age: document.getElementById(prefix+'_pt_age').value,
-        bed: document.getElementById(prefix+'_pt_bed').value.trim(),
-        hospNo: document.getElementById(prefix+'_pt_hospNo').value.trim(),
-        dept: document.getElementById(prefix+'_pt_dept').value.trim(),
+        name: (document.getElementById(prefix+'_pt_name') || {}).value ? document.getElementById(prefix+'_pt_name').value.trim() : '',
+        gender: (document.getElementById(prefix+'_pt_gender') || {}).value || '',
+        age: (document.getElementById(prefix+'_pt_age') || {}).value || '',
+        bed: (document.getElementById(prefix+'_pt_bed') || {}).value ? document.getElementById(prefix+'_pt_bed').value.trim() : '',
+        hospNo: (document.getElementById(prefix+'_pt_hospNo') || {}).value ? document.getElementById(prefix+'_pt_hospNo').value.trim() : '',
+        dept: (document.getElementById(prefix+'_pt_dept') || {}).value ? document.getElementById(prefix+'_pt_dept').value.trim() : '',
         date: dateVal
     };
 }
@@ -954,42 +1036,57 @@ function printGCSReport(){
 
 function printPaduaReport(){
     var info = getPtInfo('padua');
+    // Barbar 2010 原版 11 项
     var factors = [
-        ['padua_1','活动性肿瘤',3],['padua_2','既往VTE病史',3],['padua_3','减少活动≥3天',2],
-        ['padua_4','已知易栓症',3],['padua_5','近期(1个月内)大手术或创伤',2],['padua_6','高龄≥70岁',1],
-        ['padua_7','心脏和/或呼吸衰竭',1],['padua_8','急性心肌梗死和/或缺血性脑卒中',1],
-        ['padua_9','急性感染和/或风湿性疾病',1],['padua_10','肥胖BMI≥30 kg/m²',1],
-        ['padua_11','正在进行激素治疗',1],['padua_12','血小板计数>100x10⁹/L，需评估',1]
+        ['padua_1','活动性肿瘤',3],
+        ['padua_2','既往VTE病史',3],
+        ['padua_3','减少活动 ≥ 3天（卧床或活动受限）',3],
+        ['padua_4','已知易栓症（抗凝血酶/蛋白C/S缺陷等）',3],
+        ['padua_5','近期(≤1个月)大手术或创伤',2],
+        ['padua_6','高龄 ≥ 70岁',1],
+        ['padua_7','心脏和/或呼吸衰竭',1],
+        ['padua_8','急性心肌梗死和/或缺血性脑卒中',1],
+        ['padua_9','急性感染和/或风湿性疾病',1],
+        ['padua_10','肥胖 BMI ≥ 30 kg/m²',1],
+        ['padua_11','正在进行激素替代或避孕治疗',1]
     ];
     var score = 0;
     var checkboxRows = '';
     for(var i=0;i<factors.length;i++){
         var f = factors[i];
-        var checked = document.getElementById(f[0]).checked;
+        var el = document.getElementById(f[0]);
+        var checked = el ? el.checked : false;
         if(checked) score += f[2];
         var mark = checked ? '☑' : '☐';
-        var rowStyle = checked ? 'font-weight:700;color:#000' : '';
+        var rowStyle = checked ? 'font-weight:700;color:#000;background:#f0fdf4' : '';
         checkboxRows += '<tr style="'+rowStyle+'"><td style="width:30px;text-align:center;border:1px solid #333;padding:6px;font-size:16px">'+mark+'</td><td style="border:1px solid #333;padding:6px 10px">'+f[1]+'</td><td style="width:50px;text-align:center;border:1px solid #333;padding:6px">'+f[2]+'分</td><td style="width:60px;text-align:center;border:1px solid #333;padding:6px;font-weight:700">'+(checked?f[2]:'')+'</td></tr>';
     }
     var riskLevel='', riskText='', advice='';
-    if(score>=4){ riskLevel='VTE 高风险'; riskText='VTE发生率约11.0%，属于VTE高风险人群'; advice='1. 强烈推荐药物预防（低分子肝素），除非存在禁忌证<br>2. 评估出血风险<br>3. 早期下床活动+机械预防<br>4. 每日评估病情变化'; }
-    else{ riskLevel='VTE 低风险'; riskText='VTE发生率约0.6%~1.7%'; advice='1. 推荐基础预防：鼓励早期下床活动<br>2. 使用弹力袜/间歇充气加压装置<br>3. 根据个体情况评估是否需要药物预防'; }
+    if(score>=4){
+        riskLevel='VTE 高风险 (≥4分)';
+        riskText='未预防时 VTE 发生率约 11.0%，属于 VTE 高风险人群';
+        advice='1. 强烈推荐药物预防（低分子肝素），用药前需评估出血风险<br>2. 鼓励早期下床活动，联合机械预防（弹力袜/IPC）<br>3. 动态监测血小板计数，警惕 HIT';
+    } else {
+        riskLevel='VTE 低风险 (<4分)';
+        riskText='VTE 发生率约 0.3%~1.7%';
+        advice='1. 推荐基础预防：鼓励早期下床活动与适度补水<br>2. 可使用弹力袜或间歇充气加压装置<br>3. 暂无需常规抗凝药物预防，病情变化时及时复评';
+    }
     var tagBg = score>=4?'#fee2e2;color:#991b1b;border:2px solid #ef4444':'#dcfce7;color:#166534;border:2px solid #22c55e';
-    var html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Padua评估</title>';
+    var html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Padua评估报告</title>';
     html += '<style>*{margin:0;padding:0;box-sizing:border-box}@page{size:A4;margin:5mm}body{font-family:"SimHei","Microsoft YaHei","SimSun",sans-serif;font-size:11px;color:#000;padding:12px 16px;line-height:1.5}</style></head><body>';
-    html += '<div style="text-align:center;font-size:18px;font-weight:700;letter-spacing:4px;margin-bottom:4px">Padua评分内科住院患者VTE风险评估表</div>';
-    html += '<div style="text-align:center;font-size:10px;color:#666;margin-bottom:10px">静脉血栓栓塞症(Venous Thromboembolism) Risk Assessment</div>';
+    html += '<div style="text-align:center;font-size:18px;font-weight:700;letter-spacing:4px;margin-bottom:4px">Padua 评分内科住院患者 VTE 风险评估表</div>';
+    html += '<div style="text-align:center;font-size:10px;color:#666;margin-bottom:10px">Padua Prediction Score for Venous Thromboembolism Risk (Barbar 2010)</div>';
     html += '<div style="border-bottom:2px solid #000;margin-bottom:10px"></div>';
     html += ptInfoTable(info);
     html += '<div style="font-weight:700;font-size:12px;margin-bottom:6px">评估项目（在符合项目前打"✓"）：</div>';
     html += '<table style="width:100%;border-collapse:collapse;margin-bottom:14px;font-size:11px">';
     html += '<tr style="background:#0e7490;color:#fff"><th style="border:1px solid #08607a;padding:5px;width:30px">勾选</th><th style="border:1px solid #08607a;padding:5px;text-align:left">风险因素</th><th style="border:1px solid #08607a;padding:5px;width:50px">分值</th><th style="border:1px solid #08607a;padding:5px;width:60px">得分</th></tr>';
     html += checkboxRows;
-    html += '<tr style="background:#fef3c7;font-weight:700"><td colspan="2" style="border:1px solid #333;padding:6px;text-align:center;font-size:12px">总 分</td><td colspan="2" style="border:1px solid #333;padding:6px;text-align:center;font-size:14px;font-weight:900">'+score+' 分（临界值4分）</td></tr>';
+    html += '<tr style="background:#fef3c7;font-weight:700"><td colspan="2" style="border:1px solid #333;padding:6px;text-align:center;font-size:12px">总 分</td><td colspan="2" style="border:1px solid #333;padding:6px;text-align:center;font-size:14px;font-weight:900">'+score+' 分（高危界值 ≥ 4分）</td></tr>';
     html += '</table>';
     html += '<div style="border:2px solid #000;padding:8px 12px;margin-bottom:14px">';
     html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><span style="font-weight:700;font-size:12px">风险等级：</span><span style="display:inline-block;padding:4px 16px;font-weight:700;font-size:13px;background:'+tagBg+'">'+riskLevel+'</span></div>';
-    html += '<div style="font-weight:700;font-size:14px;margin-bottom:4px">Padua评分 = '+score+' 分</div>';
+    html += '<div style="font-weight:700;font-size:14px;margin-bottom:4px">Padua 评分 = '+score+' 分</div>';
     html += '<div style="font-size:11px;margin-bottom:4px"><b>风险判断：</b>'+riskText+'</div>';
     html += '<div style="font-size:11px"><b>预防建议：</b><br>'+advice+'</div>';
     html += '</div>';
@@ -1008,33 +1105,46 @@ function printPaduaReport(){
 
 function printCapriniReport(){
     var info = getPtInfo('caprini');
+    // Caprini 2005/2013 标准版
     var factors = [
-        ['caprini_1','年龄41~60岁',1],['caprini_2','肥胖BMI>25 kg/m²',1],
-        ['caprini_3','下肢水肿/静脉曲张/石膏制动',1],['caprini_4','严重肺炎/脓毒症/急性呼吸衰竭',1],
-        ['caprini_5','年龄61~74岁',2],['caprini_6','中心静脉置管',2],
-        ['caprini_7','关节镜手术/大手术>45min',2],['caprini_8','腹腔镜手术>45min',2],
-        ['caprini_9','癌症/既往DVT/PE病史',3],['caprini_10','卧床>72小时/石膏固定下肢/下肢瘫痪',3],
-        ['caprini_11','择期人工关节置换术/髋骨盆股骨骨折手术',5],['caprini_12','年龄≥75岁',4]
+        ['caprini_1','年龄 41~60岁',1],
+        ['caprini_2','超重/肥胖 BMI > 25 kg/m²',1],
+        ['caprini_3','下肢肿胀/静脉曲张',1],
+        ['caprini_4','严重肺部感染/急重症内科疾病',1],
+        ['caprini_13','计划小手术 (<45分钟)',1],
+        ['caprini_14','口服避孕药或激素替代治疗',1],
+        ['caprini_5','年龄 61~74岁',2],
+        ['caprini_6','中心静脉置管',2],
+        ['caprini_7','大手术 (>45分钟，含关节镜/腹腔镜等)',2],
+        ['caprini_15','现患或既往恶性肿瘤',2],
+        ['caprini_8','石膏固定/肢体制动',2],
+        ['caprini_10','患者卧床制动 > 72小时',2],
+        ['caprini_12','年龄 ≥ 75岁',3],
+        ['caprini_9','既往 DVT / PE 病史',3],
+        ['caprini_16','易栓症阳性家族史/遗传性血栓倾向',3],
+        ['caprini_11','择期人工髋/膝关节置换术、髋/骨盆/下肢骨折手术、脑卒中(<1月)',5]
     ];
     var score = 0;
     var checkboxRows = '';
     for(var i=0;i<factors.length;i++){
         var f = factors[i];
-        var checked = document.getElementById(f[0]).checked;
+        var el = document.getElementById(f[0]);
+        var checked = el ? el.checked : false;
         if(checked) score += f[2];
         var mark = checked ? '☑' : '☐';
-        var rowStyle = checked ? 'font-weight:700;color:#000' : '';
+        var rowStyle = checked ? 'font-weight:700;color:#000;background:#f0fdf4' : '';
         checkboxRows += '<tr style="'+rowStyle+'"><td style="width:30px;text-align:center;border:1px solid #333;padding:6px;font-size:16px">'+mark+'</td><td style="border:1px solid #333;padding:6px 10px">'+f[1]+'</td><td style="width:50px;text-align:center;border:1px solid #333;padding:6px">'+f[2]+'分</td><td style="width:60px;text-align:center;border:1px solid #333;padding:6px;font-weight:700">'+(checked?f[2]:'')+'</td></tr>';
     }
     var riskLevel='', riskText='', advice='', tagBg='';
-    if(score<=1){ riskLevel='极低危'; riskText='DVT发生率<0.5%'; advice='1. 早期下床活动<br>2. 无需药物或机械预防'; tagBg='#dcfce7;color:#166534;border:2px solid #22c55e'; }
-    else if(score<=2){ riskLevel='低危'; riskText='DVT发生率约1.5%'; advice='1. 推荐基础预防：早期活动<br>2. 弹力袜或间歇充气加压装置'; tagBg='#dcfce7;color:#166534;border:2px solid #22c55e'; }
-    else if(score<=4){ riskLevel='中危'; riskText='DVT发生率约3.0%'; advice='1. 建议药物预防（低分子肝素/普通肝素）<br>2. 或机械预防（间歇充气加压装置）<br>3. 早期下床活动'; tagBg='#fee2e2;color:#991b1b;border:2px solid #ef4444'; }
-    else{ riskLevel='高危/极高危'; riskText='DVT发生率≥6.0%'; advice='1. 强烈推荐药物+机械联合预防<br>2. 低分子肝素或普通肝素皮下注射<br>3. 弹力袜+间歇充气加压装置<br>4. 术后尽早启动抗凝'; tagBg='#fee2e2;color:#991b1b;border:2px solid #ef4444'; }
-    var html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Caprini评估</title>';
+    if(score<=1){ riskLevel='极低危 (0~1分)'; riskText='DVT发生率 < 0.5%'; advice='1. 鼓励早期下床活动<br>2. 无需特殊药物或机械预防'; tagBg='#dcfce7;color:#166534;border:2px solid #22c55e'; }
+    else if(score===2){ riskLevel='低危 (2分)'; riskText='DVT发生率约 1.5%'; advice='1. 推荐基础预防：早期活动<br>2. 机械预防：抗栓弹力袜(GCS)或间歇充气加压装置(IPC)'; tagBg='#dcfce7;color:#166534;border:2px solid #22c55e'; }
+    else if(score<=4){ riskLevel='中危 (3~4分)'; riskText='DVT发生率约 3.0%'; advice='1. 建议药物预防（低分子肝素/普通肝素皮下注射）<br>2. 或机械预防（IPC/GCS）<br>3. 术后尽早下床活动'; tagBg='#fee2e2;color:#991b1b;border:2px solid #ef4444'; }
+    else{ riskLevel='高危/极高危 (≥5分)'; riskText='DVT发生率 ≥ 6.0%'; advice='1. 强烈推荐药物 + 机械联合预防（LMWH + IPC/GCS）<br>2. 术前/术后尽早启动抗凝（除非存在活动性大出血禁忌）<br>3. 骨科大手术推荐延长抗凝预防至 35 天'; tagBg='#fee2e2;color:#991b1b;border:2px solid #ef4444'; }
+
+    var html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Caprini评估报告</title>';
     html += '<style>*{margin:0;padding:0;box-sizing:border-box}@page{size:A4;margin:5mm}body{font-family:"SimHei","Microsoft YaHei","SimSun",sans-serif;font-size:11px;color:#000;padding:12px 16px;line-height:1.5}</style></head><body>';
-    html += '<div style="text-align:center;font-size:18px;font-weight:700;letter-spacing:4px;margin-bottom:4px">Caprini围手术期VTE风险评估表</div>';
-    html += '<div style="text-align:center;font-size:10px;color:#666;margin-bottom:10px">静脉血栓栓塞症(Venous Thromboembolism) Risk Assessment</div>';
+    html += '<div style="text-align:center;font-size:18px;font-weight:700;letter-spacing:4px;margin-bottom:4px">Caprini 围手术期 VTE 风险评估表</div>';
+    html += '<div style="text-align:center;font-size:10px;color:#666;margin-bottom:10px">Caprini Risk Assessment Model for Surgical Patients (2005/2013)</div>';
     html += '<div style="border-bottom:2px solid #000;margin-bottom:10px"></div>';
     html += ptInfoTable(info);
     html += '<div style="font-weight:700;font-size:12px;margin-bottom:6px">评估项目（在符合项目前打"✓"）：</div>';
@@ -1045,7 +1155,7 @@ function printCapriniReport(){
     html += '</table>';
     html += '<div style="border:2px solid #000;padding:8px 12px;margin-bottom:14px">';
     html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><span style="font-weight:700;font-size:12px">风险等级：</span><span style="display:inline-block;padding:4px 16px;font-weight:700;font-size:13px;background:'+tagBg+'">'+riskLevel+'</span><span style="font-size:11px;color:#555">（'+riskText+'）</span></div>';
-    html += '<div style="font-weight:700;font-size:14px;margin-bottom:4px">Caprini评分 = '+score+' 分</div>';
+    html += '<div style="font-weight:700;font-size:14px;margin-bottom:4px">Caprini 评分 = '+score+' 分</div>';
     html += '<div style="font-size:11px"><b>预防建议：</b><br>'+advice+'</div>';
     html += '</div>';
     html += '<div style="display:flex;justify-content:flex-end;gap:50px;margin-top:16px">';

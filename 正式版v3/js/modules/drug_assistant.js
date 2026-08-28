@@ -37,9 +37,13 @@ window.DrugAssistant = (function() {
         renderDrugList();
     }
 
+    let searchTimer = null;
     function onSearch(query) {
         currentSearchText = query;
-        renderDrugList();
+        if (searchTimer) clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => {
+            renderDrugList();
+        }, 120);
     }
 
     function renderDrugList() {
