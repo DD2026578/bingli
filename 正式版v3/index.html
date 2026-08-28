@@ -184,7 +184,7 @@
 <button class="btn btn-outline" onclick="fillNormalVitals()">❤️ 填正常体征</button>
 <span id="autoSaveStatus" style="font-size:12px;color:var(--c-text-muted);margin-left:auto;align-self:center;font-weight:500"></span>
 </div>
-<div class="hint">💡 <strong>使用指南：</strong>① 左侧选科室 → 选疾病（支持拼音缩写智能搜索），点击疾病即自动填充五大文书 ② 自由编辑病历内容 ③ 切换 Tab 栏至 <b>临床计算器</b> 或 <b>AI对话</b></div>
+<div class="hint">💡 <strong>使用指南：</strong>① 左侧选科室 → 选疾病（支持拼音缩写智能搜索），点击疾病即自动填充五大文书 ② 自由编辑病历内容 ③ 切换 Tab 栏至 <b>临床计算器</b>、<b>用药助手</b> 或 <b>AI对话</b></div>
 
 <!-- Tab切换栏 -->
 <div class="record-tabs">
@@ -194,6 +194,7 @@
 <button class="tab-btn" onclick="switchTab('discharge')">📤 出院记录</button>
 <button class="tab-btn" onclick="switchTab('pathway')">📊 临床路径</button>
 <button class="tab-btn" onclick="switchTab('calculator')">🧮 临床计算器</button>
+<button class="tab-btn" onclick="switchTab('drugAssistant')">💊 用药助手</button>
 <button class="tab-btn" onclick="switchTab('aiChat')">🤖 AI对话</button>
 </div>
 
@@ -358,12 +359,12 @@
 
 <div class="calc-nav">
 <button class="calc-nav-btn active" onclick="switchCalcCat('renal', this)">🏥 肾脏、代谢与体征</button>
+<button class="calc-nav-btn" onclick="switchCalcCat('fluid', this)">💧 水电解质与酸碱补液</button>
 <button class="calc-nav-btn" onclick="switchCalcCat('hepatic', this)">🩺 肝胆与消化系统</button>
 <button class="calc-nav-btn" onclick="switchCalcCat('pulm', this)">🫁 呼吸重症与血管急症</button>
 <button class="calc-nav-btn" onclick="switchCalcCat('surg', this)">🚑 外科烧伤与儿科</button>
 <button class="calc-nav-btn" onclick="switchCalcCat('neuro', this)">🧠 神经与意识评估</button>
 <button class="calc-nav-btn" onclick="switchCalcCat('cardio', this)">❤️ 心血管与急重症评分</button>
-<button class="calc-nav-btn" onclick="switchCalcCat('common', this)">🧬 通用与妇产</button>
 </div>
 
 <!-- 1. 肾脏、代谢与体征 -->
@@ -400,6 +401,9 @@
 </div>
 </div>
 
+</div>
+<!-- 2. 水电解质与酸碱补液 -->
+<div class="calc-cat-panel" id="calc-cat-fluid">
 <div class="calc-card">
 <div class="calc-card-header">
 <div><span>内科/代谢</span> <b>校正血钙 (Corrected Calcium)</b></div>
@@ -409,6 +413,10 @@
 <div class="calc-form-grid">
 <div class="calc-field"><label>实测血钙 (mmol/L)</label><input type="number" id="ca_val" step="0.01" value="2.00"></div>
 <div class="calc-field"><label>血清白蛋白 ALB (g/L)</label><input type="number" id="ca_alb" value="30"></div>
+</div>
+<div class="calc-case-demo">
+<div class="calc-case-demo-title">📖 临床案例演示</div>
+<div class="calc-case-demo-body"><strong>患者：</strong>男性，55kg，慢性肾功能不全伴低白蛋白血症，实测血钙 1.9mmol/L，血清白蛋白 25g/L，无明显手足搐搦。<br><strong>计算：</strong>校正血钙=1.9+0.02×(40−25)=1.9+0.3=2.2mmol/L（低钙血症边界，低于2.25为偏低）。<br><strong>执行：</strong>急性症状性低钙（手足搐搦/喉痉挛）：10%葡萄糖酸钙 10-20ml 以 5%GS 等量稀释后缓慢静注/静滴（约10min），心电监护；慢性低钙：口服钙剂（碳酸钙）+活性维生素D，同时查血镁，合并低镁需同时纠正。动态监测血钙、白蛋白与心电图。</div>
 </div>
 <div class="calc-action-bar"><button class="btn btn-primary" onclick="calcCorrectedCa()">⚡ 立即计算</button></div>
 <div class="calc-result-box" id="res_ca" style="display:none"></div>
@@ -428,13 +436,181 @@
 <div class="calc-field"><label>性别</label><select id="ag_gender"><option value="male">男(系数0.6)</option><option value="female">女(系数0.5)</option></select></div>
 <div class="calc-field"><label>体重 (kg)</label><input type="number" id="ag_weight" value="60"></div>
 </div>
+<div class="calc-case-demo">
+<div class="calc-case-demo-title">📖 临床案例演示</div>
+<div class="calc-case-demo-body"><strong>患者：</strong>女性，50kg，慢性腹泻后乏力头晕，血钠128mmol/L、血氯95mmol/L、HCO₃20mmol/L。<br><strong>计算：</strong>AG=128−(95+20)=13mmol/L（正常范围）；缺钠量=(142−128)×50×0.5=350mmol；相当于0.9%NS≈350/0.154≈2273ml 或 3%高渗盐水≈350/0.513≈682ml。<br><strong>执行：</strong>首日补缺钠量1/2（175mmol）+每日生理需要量；慢性低钠纠正速度宜缓：血钠24h升高一般≤8-10mmol/L（前24h不超过10），防渗透性脱髓鞘综合征；每4-6h复查血钠；症状性重度低钠（血钠<120或伴抽搐/昏迷）可考虑3%高渗盐水并严密监测。能口服者口服补钠/ORS优先。</div>
+</div>
 <div class="calc-action-bar"><button class="btn btn-primary" onclick="calcAG()">⚡ 立即计算</button></div>
 <div class="calc-result-box" id="res_ag" style="display:none"></div>
 </div>
 </div>
+
+<div class="calc-card">
+<div class="calc-card-header">
+<div><span>水电解质</span> <b>成人等渗性脱水补液量计算器</b></div>
+<div class="calc-source">📚 人卫第10版《外科学》水、电解质代谢紊乱</div>
+</div>
+<div class="calc-card-body">
+<div class="calc-form-grid">
+<div class="calc-field"><label>体重 (kg)</label><input type="number" id="isofluid_weight" value="60" min="1" max="300"></div>
+<div class="calc-field"><label>脱水程度</label><select id="isofluid_degree"><option value="mild">轻度 (3%)</option><option value="mod" selected>中度 (5%)</option><option value="severe">重度 (8%)</option></select></div>
+<div class="calc-field"><label>持续丢失量 (ml/day，无填0)</label><input type="number" id="isofluid_loss" value="0" min="0" max="10000"></div>
+</div>
+<div class="calc-fluid-guide">
+<div class="calc-fluid-guide-title">🧪 所用液体与补液方法</div>
+<div class="calc-fluid-guide-body">【所用液体】轻度：口服补液盐(ORS)、平衡液(乳酸/醋酸林格)、0.9%氯化钠；中重度：首日含钠液为主，0.9%NS:5%GS≈2:1，可配平衡液。<br>【补液方法】途径：轻中度可口服/静脉，重度静脉滴注。分配：首日先补累计失液量1/2（前6-8h较快输入），余1/2+生理需要量2000ml+持续丢失量24h内匀速补充。速度：成人初始200-300ml/h（心衰/老年减量）。见尿补钾（尿量≥40ml/h后加钾）。监测：尿量、生命体征、CVP、血电解质。</div>
+</div>
+<div class="calc-case-demo">
+<div class="calc-case-demo-title">📖 临床案例演示</div>
+<div class="calc-case-demo-body"><strong>患者：</strong>男性，60kg，急性肠梗阻伴频繁呕吐2天，中度脱水（约5%），无额外持续丢失。<br><strong>计算：</strong>累计失液量=60×5%×1000=3000ml；首日补1/2=1500ml；+成人日生理需要量2000ml；当日补液总量=1500+2000=3500ml。<br><strong>执行：</strong>先盐后糖原则，前6-8h较快输入1500ml含钠液（0.9%NS:5%GS≈2:1），余量24h内匀速；尿量≥40ml/h后见尿补钾；动态监测尿量、血电解质与生命体征。</div>
+</div>
+<div class="calc-action-bar"><button class="btn btn-primary" onclick="calcIsotonicFluid()">⚡ 立即计算</button></div>
+<div class="calc-result-box" id="res_isofluid" style="display:none"></div>
+</div>
 </div>
 
-<!-- 2. 肝胆与消化系统 -->
+<div class="calc-card">
+<div class="calc-card-header">
+<div><span>水电解质</span> <b>每日生理需要量（维持液）计算器</b></div>
+<div class="calc-source">📚 《中国临床液体治疗专家共识》/ 人卫《外科学》</div>
+</div>
+<div class="calc-card-body">
+<div class="calc-form-grid">
+<div class="calc-field"><label>体重 (kg)</label><input type="number" id="mainfluid_weight" value="60" min="1" max="300"></div>
+</div>
+<div class="calc-fluid-guide">
+<div class="calc-fluid-guide-title">🧪 所用液体与补液方法</div>
+<div class="calc-fluid-guide-body">【所用液体】5%GS或10%GS（基础糖液）+0.9%NS或5%葡萄糖氯化钠+10%KCl（浓度≤0.3%）；也可用复方氯化钠。<br>【补液方法】禁食者静脉滴注、24h匀速；能进食者口服为主。配比示例：按日需氯化钠 4-6g、K 3-4g → 0.9%NS 500ml（含NaCl约4.5g）+5%GS 1000ml+10%KCl 30ml（约3g）分瓶滴注。速度约80-120ml/h（视总量）。监测出入量、尿量、电解质；糖尿病者注意含糖液血糖监测。</div>
+</div>
+<div class="calc-case-demo">
+<div class="calc-case-demo-title">📖 临床案例演示</div>
+<div class="calc-case-demo-body"><strong>患者：</strong>女性，60kg，腹腔镜胆囊切除术后禁食第1天，需静脉维持补液。<br><strong>计算：</strong>成人法=60×35=2100ml/日（约87.5ml/h）；4-2-1法=60+1×(60-20)=100ml/h→2400ml/日。<br><strong>执行：</strong>0.9%NS 500ml+5%GS 1000ml+10%KCl 30ml（浓度≤0.3%）分瓶滴注，24h匀速约87-100ml/h；记录出入量、复查电解质与血糖。</div>
+</div>
+<div class="calc-action-bar"><button class="btn btn-primary" onclick="calcMaintenanceFluid()">⚡ 立即计算</button></div>
+<div class="calc-result-box" id="res_mainfluid" style="display:none"></div>
+</div>
+</div>
+
+<div class="calc-card">
+<div class="calc-card-header">
+<div><span>水电解质</span> <b>高渗性脱水/高钠血症自由水缺乏量计算器</b></div>
+<div class="calc-source">📚 人卫第10版《内科学》高钠血症 / 《哈里森内科学》</div>
+</div>
+<div class="calc-card-body">
+<div class="calc-form-grid">
+<div class="calc-field"><label>体重 (kg)</label><input type="number" id="fwdeficit_weight" value="60" min="1" max="300"></div>
+<div class="calc-field"><label>实测血钠 Na⁺ (mmol/L)</label><input type="number" id="fwdeficit_na" value="150" min="141" max="200"></div>
+<div class="calc-field"><label>性别</label><select id="fwdeficit_gender"><option value="male">男(系数0.6)</option><option value="female">女(系数0.5)</option></select></div>
+</div>
+<div class="calc-fluid-guide">
+<div class="calc-fluid-guide-title">🧪 所用液体与补液方法</div>
+<div class="calc-fluid-guide-body">【所用液体】5%GS（纯自由水、无电解质）或0.45%氯化钠（半张）；能口服者凉开水/白开水。<br>【补液方法】轻症口服，重症静脉。速度控制使血钠每小时下降≤0.5-1mmol/L、24h下降≤10mmol/L（防渗透性脱髓鞘）。先补计算缺乏量的1/2，分次补充并计入每日生理需要量，可2-3日逐渐纠正。每2-4h复查血钠。</div>
+</div>
+<div class="calc-case-demo">
+<div class="calc-case-demo-title">📖 临床案例演示</div>
+<div class="calc-case-demo-body"><strong>患者：</strong>男性，60kg，意识障碍伴明显口渴，血钠155mmol/L，高渗性脱水。<br><strong>计算：</strong>自由水缺乏量=0.6×60×(1−140/155)≈3.48L；累计缺水量≈3480ml。<br><strong>执行：</strong>首日补1/2约1.7L自由水（5%GS或0.45%NS半张盐），使血钠每小时下降≤0.5-1mmol/L、24h≤10mmol/L，2-3日逐渐纠正；每2-4h复查血钠，防渗透性脱髓鞘综合征。</div>
+</div>
+<div class="calc-action-bar"><button class="btn btn-primary" onclick="calcFreeWaterDeficit()">⚡ 立即计算</button></div>
+<div class="calc-result-box" id="res_fwdeficit" style="display:none"></div>
+</div>
+</div>
+
+<div class="calc-card">
+<div class="calc-card-header">
+<div><span>酸碱平衡</span> <b>代谢性酸中毒补碱量（碳酸氢钠）计算器</b></div>
+<div class="calc-source">📚 《内科学》酸碱平衡 / 临床补碱原则</div>
+</div>
+<div class="calc-card-body">
+<div class="calc-form-grid">
+<div class="calc-field"><label>体重 (kg)</label><input type="number" id="bicarb_weight" value="60" min="1" max="300"></div>
+<div class="calc-field"><label>碱剩余 BE (mmol/L，优先)</label><input type="number" id="bicarb_be" value="-8" step="0.1" min="-30" max="0"></div>
+<div class="calc-field"><label>实测 HCO₃⁻ (mmol/L)</label><input type="number" id="bicarb_hco3" value="15" step="0.1" min="5" max="24"></div>
+</div>
+<div class="calc-fluid-guide">
+<div class="calc-fluid-guide-title">🧪 所用液体与补液方法</div>
+<div class="calc-fluid-guide-body">【所用液体】5%碳酸氢钠注射液(250ml/瓶)；需缓慢可稀释为1.4%等渗碳酸氢钠（5%液1份+5%GS或灭菌注射用水2.5份）。<br>【补液方法】静脉滴注。先补计算量1/2（30-60min内），复测血气再决定余量。速度不宜过快（成人5%NaHCO3一般≤200ml/h，或1-2ml/kg/h），防高钠、容量超负荷、渗透压骤升。指征：pH<7.2的重度酸中毒；轻中度代酸以治疗原发病为主。注意补碱致低钾，须监测并酌情补钾。</div>
+</div>
+<div class="calc-case-demo">
+<div class="calc-case-demo-title">📖 临床案例演示</div>
+<div class="calc-case-demo-body"><strong>患者：</strong>男性，60kg，糖尿病酮症酸中毒，血气BE=−10mmol/L、pH 7.15。<br><strong>计算：</strong>补碱量=10×0.3×60=180mmol；5%NaHCO3=180/0.6=300ml（约1.2瓶/250ml，临床按整瓶取用约需2瓶）。<br><strong>执行：</strong>DKA应以补液+小剂量胰岛素治疗为主，仅当pH<7.1才考虑静脉补碱；若确需补碱则先补计算量1/2（90mmol≈150ml 5%NaHCO3，30-60min内），复测血气再定余量；注意补碱致低钾，需监测血钾并酌情补钾。</div>
+</div>
+<div class="calc-action-bar"><button class="btn btn-primary" onclick="calcBicarbDose()">⚡ 立即计算</button></div>
+<div class="calc-result-box" id="res_bicarb" style="display:none"></div>
+</div>
+</div>
+
+<div class="calc-card">
+<div class="calc-card-header">
+<div><span>电解质</span> <b>低钾血症补钾量计算器</b></div>
+<div class="calc-source">📚 《内科学》低钾血症 / 临床补钾规范</div>
+</div>
+<div class="calc-card-body">
+<div class="calc-form-grid">
+<div class="calc-field"><label>体重 (kg)</label><input type="number" id="kcl_weight" value="60" min="1" max="300"></div>
+<div class="calc-field"><label>实测血钾 K⁺ (mmol/L)</label><input type="number" id="kcl_k" value="3.0" step="0.1" min="1.0" max="3.9"></div>
+</div>
+<div class="calc-fluid-guide">
+<div class="calc-fluid-guide-title">🧪 所用液体与补液方法</div>
+<div class="calc-fluid-guide-body">【所用液体】口服：10%氯化钾口服液/氯化钾缓释片/枸橼酸钾颗粒；静脉：10%氯化钾注射液(10ml:1g)。<br>【补液方法】能口服者口服优先（更安全）。静脉配液浓度≤0.3%（1000ml液体中≤30ml 10%KCl），中心静脉可≤0.6%；外周滴速≤10-20mmol/h；每日总量≤3-6g(40-80mmol)。先补1/2复查；见尿补钾(尿量>30ml/h)；心电监护（血钾<2.5或伴心律失常考虑深静脉途径）。</div>
+</div>
+<div class="calc-case-demo">
+<div class="calc-case-demo-title">📖 临床案例演示</div>
+<div class="calc-case-demo-body"><strong>患者：</strong>女性，50kg，长期服用噻嗪类利尿剂，血钾3.0mmol/L，感乏力。<br><strong>计算：</strong>缺钾量=(4.0−3.0)×50×0.3=15mmol；10%KCl=15/1.34≈11ml。<br><strong>执行：</strong>能口服者口服补钾优先（10%KCl口服液分次口服）；静脉则0.9%NS 500ml+10%KCl≤15ml（浓度≤0.3%）缓慢滴注，滴速≤10-20mmol/h；先补1/2复查；见尿补钾（尿量>30ml/h）；心电监护。</div>
+</div>
+<div class="calc-action-bar"><button class="btn btn-primary" onclick="calcKReplacement()">⚡ 立即计算</button></div>
+<div class="calc-result-box" id="res_kcl" style="display:none"></div>
+</div>
+</div>
+
+<div class="calc-card">
+<div class="calc-card-header">
+<div><span>电解质</span> <b>低镁血症补镁量计算器</b></div>
+<div class="calc-source">📚 《内科学》电解质紊乱 / 临床补镁规范</div>
+</div>
+<div class="calc-card-body">
+<div class="calc-form-grid">
+<div class="calc-field"><label>体重 (kg)</label><input type="number" id="mg_weight" value="60" min="1" max="300"></div>
+<div class="calc-field"><label>实测血镁 Mg²⁺ (mmol/L)</label><input type="number" id="mg_val" step="0.01" value="0.5" min="0.1" max="0.74"></div>
+</div>
+<div class="calc-fluid-guide">
+<div class="calc-fluid-guide-title">🧪 所用液体与补液方法</div>
+<div class="calc-fluid-guide-body">【所用液体】25%硫酸镁注射液(10ml:2.5g，1ml≈1mmol Mg²⁺)、10%硫酸镁、口服门冬氨酸钾镁/氧化镁/乳酸镁。<br>【补液方法】轻中度：每日 25%硫酸镁 10-20ml 加入液体（5%GS/0.9%NS 250-500ml）缓慢静滴，分 1-2 次；重度：20-40ml 分次静滴，症状性先 10-20ml 稀释后 10-20min 缓慢静注；监测膝腱反射、呼吸、血压；肾功能不全减量或慎用；静注过快可致低血压甚至心脏骤停。</div>
+</div>
+<div class="calc-case-demo">
+<div class="calc-case-demo-title">📖 临床案例演示</div>
+<div class="calc-case-demo-body"><strong>患者：</strong>男性，60kg，慢性酒精性肝病、长期进食差，血镁0.45mmol/L，伴手颤。<br><strong>计算：</strong>细胞外缺镁估算=(0.8−0.45)×60×0.3≈6.3mmol（仅供参考，血镁仅反映约1%总镁）；临床按重度低镁每日补25%硫酸镁20-40ml（20-40mmol）分次静滴，症状性首剂20ml稀释后10-20min缓慢静注。<br><strong>执行：</strong>25%硫酸镁20ml加入5%GS 500ml缓慢静滴（4-6h）；监测膝腱反射、呼吸与血压；肾功能不全减量；与洋地黄合用慎用；病情稳定后口服门冬氨酸钾镁维持。</div>
+</div>
+<div class="calc-action-bar"><button class="btn btn-primary" onclick="calcMgReplacement()">⚡ 立即计算</button></div>
+<div class="calc-result-box" id="res_mg" style="display:none"></div>
+</div>
+</div>
+
+<div class="calc-card">
+<div class="calc-card-header">
+<div><span>电解质</span> <b>低磷血症补磷量计算器</b></div>
+<div class="calc-source">📚 《内科学》电解质紊乱 / 临床补磷规范</div>
+</div>
+<div class="calc-card-body">
+<div class="calc-form-grid">
+<div class="calc-field"><label>体重 (kg)</label><input type="number" id="p_weight" value="60" min="1" max="300"></div>
+<div class="calc-field"><label>实测血磷 P (mmol/L)</label><input type="number" id="p_val" step="0.01" value="0.4" min="0.1" max="0.84"></div>
+</div>
+<div class="calc-fluid-guide">
+<div class="calc-fluid-guide-title">🧪 所用液体与补液方法</div>
+<div class="calc-fluid-guide-body">【所用液体】甘油磷酸钠注射液（10ml:2.16g，1ml≈1mmol磷，10ml/支）；口服磷酸盐（磷酸二氢钠/磷酸钾）；补磷常同时补充镁钾。<br>【补液方法】轻中度口服磷酸盐；重度（血磷<0.3）静脉补磷 0.2-0.5 mmol/kg/日（甘油磷酸钠 10-20ml/日加入液体缓慢静滴）；补磷过快致低钙抽搐，需监测血磷血钙；低磷常伴低镁低钾应同时纠正。</div>
+</div>
+<div class="calc-case-demo">
+<div class="calc-case-demo-title">📖 临床案例演示</div>
+<div class="calc-case-demo-body"><strong>患者：</strong>女性，55kg，慢性酒精戒断+呼吸性碱中毒，血磷0.2mmol/L（重度低磷），伴明显乏力与呼吸困难。<br><strong>计算：</strong>缺磷量=(1.0−0.2)×55×0.5≈22mmol；甘油磷酸钠≈22ml（约3支/10ml）。<br><strong>执行：</strong>重度低磷（<0.3）需静脉补磷0.2-0.5mmol/kg/日（本例11-28mmol/日），甘油磷酸钠10-20ml加入0.9%NS 500ml缓慢静滴；监测血磷/血钙（防低钙抽搐）；同时查血镁血钾并纠正；病情稳定后改口服磷酸盐维持。</div>
+</div>
+<div class="calc-action-bar"><button class="btn btn-primary" onclick="calcPReplacement()">⚡ 立即计算</button></div>
+<div class="calc-result-box" id="res_p" style="display:none"></div>
+</div>
+</div>
+
+</div>
+
+<!-- 3. 肝胆与消化系统 -->
 <div class="calc-cat-panel" id="calc-cat-hepatic">
 <div class="calc-card">
 <div class="calc-card-header">
@@ -512,7 +688,6 @@
 <div class="calc-result-box" id="res_meld" style="display:none"></div>
 </div>
 </div>
-</div>
 
 <div class="calc-card">
 <div class="calc-card-header">
@@ -537,8 +712,9 @@
 <div class="calc-result-box" id="res_gb" style="display:none"></div>
 </div>
 </div>
+</div>
 
-<!-- 3. 呼吸重症与血管急症 -->
+<!-- 4. 呼吸重症与血管急症 -->
 <div class="calc-cat-panel" id="calc-cat-pulm">
 <div class="calc-card">
 <div class="calc-card-header">
@@ -560,10 +736,15 @@
 
 <div class="calc-card">
 <div class="calc-card-header">
-<div><span>血管外科/急诊</span> <b>Wells 下肢深静脉血栓 (DVT) 临床风险评分</b></div>
-<div class="calc-source">📚 人卫第10版《外科学》P542 / 血管外科指南</div>
+<div><span>血管外科/急诊</span> <b>Wells 血栓风险评估（DVT / PE）</b></div>
+<div class="calc-source">📚 人卫第10版《外科学》P542 / 血管外科指南；《内科学》P67 / ESC肺栓塞指南</div>
 </div>
 <div class="calc-card-body">
+<div class="calc-subtabs">
+<button class="calc-subtab active" onclick="switchCalcSub('sub-wells-dvt', this)">DVT 下肢深静脉血栓</button>
+<button class="calc-subtab" onclick="switchCalcSub('sub-wells-pe', this)">PE 肺栓塞</button>
+</div>
+<div class="calc-subpanel active" id="sub-wells-dvt">
 <div class="calc-check-grid">
 <label class="calc-checkbox"><input type="checkbox" id="wells_1"> 活性肿瘤 (过去6个月内接受过治疗或姑息治疗) (+1分)</label>
 <label class="calc-checkbox"><input type="checkbox" id="wells_2"> 下肢瘫痪、假肢或近期下肢石膏固定制动 (+1分)</label>
@@ -580,14 +761,7 @@
 <div class="calc-action-bar"><button class="btn btn-primary" onclick="calcWellsDVT()">⚡ 评估 DVT 风险</button></div>
 <div class="calc-result-box" id="res_wells" style="display:none"></div>
 </div>
-</div>
-
-<div class="calc-card">
-<div class="calc-card-header">
-<div><span>呼吸/急诊</span> <b>Wells 肺栓塞 (PE) 临床概率评分</b></div>
-<div class="calc-source">📚 人卫第10版《内科学》P67 / ESC肺栓塞指南</div>
-</div>
-<div class="calc-card-body">
+<div class="calc-subpanel" id="sub-wells-pe">
 <div class="calc-check-grid">
 <label class="calc-checkbox"><input type="checkbox" id="wpe_1"> PE比其他诊断可能性更大 (+3分)</label>
 <label class="calc-checkbox"><input type="checkbox" id="wpe_2"> 心率 &gt; 100 次/分 (+1.5分)</label>
@@ -601,8 +775,9 @@
 </div>
 </div>
 </div>
+</div>
 
-<!-- 4. 外科烧伤与儿科 -->
+<!-- 5. 外科烧伤与儿科 -->
 <div class="calc-cat-panel" id="calc-cat-surg">
 <div class="calc-card">
 <div class="calc-card-header">
@@ -662,7 +837,7 @@
 </div>
 </div>
 
-<!-- 5. 神经与意识评估 -->
+<!-- 6. 神经与意识评估 -->
 <div class="calc-cat-panel" id="calc-cat-neuro">
 <div class="calc-card">
 <div class="calc-card-header">
@@ -740,10 +915,15 @@
 
 <div class="calc-card">
 <div class="calc-card-header">
-<div><span>血管外科/骨科</span> <b>Caprini 围手术期静脉血栓风险评估量表</b></div>
-<div class="calc-source">📚 人卫第10版《外科学》P542-543（Caprini 2005/2010 版风险分层）</div>
+<div><span>血管外科/骨科</span> <b>VTE 静脉血栓风险评估（外科 Caprini / 内科 Padua）</b></div>
+<div class="calc-source">📚 人卫第10版《外科学》P542-543（Caprini 2005/2010 版风险分层）；《内科学》P71 / 血栓指南（Padua）</div>
 </div>
 <div class="calc-card-body">
+<div class="calc-subtabs">
+<button class="calc-subtab active" onclick="switchCalcSub('sub-caprini', this)">Caprini 外科</button>
+<button class="calc-subtab" onclick="switchCalcSub('sub-padua', this)">Padua 内科</button>
+</div>
+<div class="calc-subpanel active" id="sub-caprini">
 <div style="background:var(--c-primary-surface);border:1px solid var(--c-border);padding:12px 14px;border-radius:8px;margin-bottom:14px">
 <b style="font-size:13px;color:var(--c-primary)">📋 患者信息（用于打印报告）</b>
 <div style="display:flex;gap:12px;margin-top:10px;flex-wrap:wrap">
@@ -776,14 +956,7 @@
 </div>
 <div class="calc-result-box" id="res_caprini" style="display:none"></div>
 </div>
-</div>
-
-<div class="calc-card">
-<div class="calc-card-header">
-<div><span>血管/内科</span> <b>Padua 内科住院患者静脉血栓栓塞症风险评估</b></div>
-<div class="calc-source">📚 人卫第10版《内科学》P71 / 血栓指南</div>
-</div>
-<div class="calc-card-body">
+<div class="calc-subpanel" id="sub-padua">
 <div style="background:var(--c-primary-surface);border:1px solid var(--c-border);padding:12px 14px;border-radius:8px;margin-bottom:14px">
 <b style="font-size:13px;color:var(--c-primary)">📋 患者信息（用于打印报告）</b>
 <div style="display:flex;gap:12px;margin-top:10px;flex-wrap:wrap">
@@ -846,8 +1019,9 @@
 <div class="calc-result-box" id="res_nihss" style="display:none"></div>
 </div>
 </div>
+</div>
 
-<!-- 6. 心血管与急重症评分 -->
+<!-- 7. 心血管与急重症评分 -->
 <div class="calc-cat-panel" id="calc-cat-cardio">
 <div class="calc-card">
 <div class="calc-card-header">
@@ -872,10 +1046,15 @@
 
 <div class="calc-card">
 <div class="calc-card-header">
-<div><span>急重症/感染</span> <b>qSOFA 快速脓毒症相关器官衰竭评估</b></div>
-<div class="calc-source">📚 人卫第10版《内科学》P148 / SSC指南</div>
+<div><span>急重症/感染</span> <b>脓毒症评估（qSOFA 快速筛查 / SOFA 评分）</b></div>
+<div class="calc-source">📚 人卫第10版《内科学》P148 / SSC指南（qSOFA）；Vincent 1996 / SSC 2021（SOFA）</div>
 </div>
 <div class="calc-card-body">
+<div class="calc-subtabs">
+<button class="calc-subtab active" onclick="switchCalcSub('sub-qsofa', this)">qSOFA 快速筛查</button>
+<button class="calc-subtab" onclick="switchCalcSub('sub-sofa', this)">SOFA 评分</button>
+</div>
+<div class="calc-subpanel active" id="sub-qsofa">
 <div class="calc-check-grid">
 <label class="calc-checkbox"><input type="checkbox" id="qsofa_1"> 呼吸频率 ≥ 22 次/分 (+1分)</label>
 <label class="calc-checkbox"><input type="checkbox" id="qsofa_2"> 意识改变 (GCS &lt; 15) (+1分)</label>
@@ -883,6 +1062,19 @@
 </div>
 <div class="calc-action-bar"><button class="btn btn-primary" onclick="calcQSOFA()">⚡ 计算 qSOFA 评分</button></div>
 <div class="calc-result-box" id="res_qsofa" style="display:none"></div>
+</div>
+<div class="calc-subpanel" id="sub-sofa">
+<div class="calc-form-grid">
+<div class="calc-field"><label>呼吸（PaO2/FiO2 或 SpO2）</label><select id="sofa_resp"><option value="0">0-≥400（SpO2≥93%）</option><option value="1">1-300~399</option><option value="2">2-200~299</option><option value="3">3-100~199 伴机械通气</option><option value="4">4-&lt;100 伴机械通气</option></select></div>
+<div class="calc-field"><label>凝血（血小板 ×10⁹/L）</label><select id="sofa_coag"><option value="0">0-≥150</option><option value="1">1-100~149</option><option value="2">2-50~99</option><option value="3">3-20~49</option><option value="4">4-&lt;20</option></select></div>
+<div class="calc-field"><label>肝脏（胆红素 μmol/L）</label><select id="sofa_liver"><option value="0">0-&lt;20</option><option value="1">1-20~32</option><option value="2">2-33~101</option><option value="3">3-102~204</option><option value="4">4-&gt;204</option></select></div>
+<div class="calc-field"><label>循环（MAP/血管活性药）</label><select id="sofa_cv"><option value="0">0-MAP≥70</option><option value="1">1-MAP&lt;70</option><option value="2">2-多巴胺≤5 或多巴酚丁胺</option><option value="3">3-多巴胺&gt;5 或肾上腺素≤0.1</option><option value="4">4-多巴胺&gt;15 或肾上腺素&gt;0.1</option></select></div>
+<div class="calc-field"><label>神经（GCS）</label><select id="sofa_neuro"><option value="0">0-15</option><option value="1">1-13~14</option><option value="2">2-10~12</option><option value="3">3-6~9</option><option value="4">4-&lt;6</option></select></div>
+<div class="calc-field"><label>肾脏（肌酐 μmol/L 或尿量）</label><select id="sofa_renal"><option value="0">0-&lt;110</option><option value="1">1-110~170</option><option value="2">2-171~299</option><option value="3">3-300~440 或尿量&lt;500ml/d</option><option value="4">4-&gt;440 或尿量&lt;200ml/d</option></select></div>
+</div>
+<div class="calc-action-bar"><button class="btn btn-primary" onclick="calcSOFA()">⚡ 计算 SOFA 评分</button></div>
+<div class="calc-result-box" id="res_sofa" style="display:none"></div>
+</div>
 </div>
 </div>
 
@@ -939,10 +1131,15 @@
 
 <div class="calc-card">
 <div class="calc-card-header">
-<div><span>心血管/急诊</span> <b>TIMI 不稳定性心绞痛/非ST段抬高心梗风险评分</b></div>
-<div class="calc-source">📚 人卫第10版《内科学》P243</div>
+<div><span>心血管/急诊</span> <b>ACS 急性冠脉综合征风险评估（TIMI / GRACE）</b></div>
+<div class="calc-source">📚 人卫第10版《内科学》P243（TIMI）；GRACE 2.0/1.0 风险模型（GRACE）</div>
 </div>
 <div class="calc-card-body">
+<div class="calc-subtabs">
+<button class="calc-subtab active" onclick="switchCalcSub('sub-timi', this)">TIMI</button>
+<button class="calc-subtab" onclick="switchCalcSub('sub-grace', this)">GRACE</button>
+</div>
+<div class="calc-subpanel active" id="sub-timi">
 <div class="calc-check-grid">
 <label class="calc-checkbox"><input type="checkbox" id="timi_1"> 年龄 ≥ 65岁 (+1分)</label>
 <label class="calc-checkbox"><input type="checkbox" id="timi_2"> ≥ 3个冠心病危险因素 (+1分)</label>
@@ -954,6 +1151,23 @@
 </div>
 <div class="calc-action-bar"><button class="btn btn-primary" onclick="calcTIMI()">⚡ 计算 TIMI 风险评分</button></div>
 <div class="calc-result-box" id="res_timi" style="display:none"></div>
+</div>
+<div class="calc-subpanel" id="sub-grace">
+<div class="calc-form-grid">
+<div class="calc-field"><label>年龄 (岁)</label><input type="number" id="grace_age" value="60" min="20" max="120"></div>
+<div class="calc-field"><label>心率 (次/分)</label><input type="number" id="grace_hr" value="90" min="20" max="250"></div>
+<div class="calc-field"><label>收缩压 (mmHg)</label><input type="number" id="grace_sbp" value="130" min="50" max="250"></div>
+<div class="calc-field"><label>肌酐 (mg/dL)</label><input type="number" id="grace_cr" value="1.0" step="0.1" min="0.1" max="20"></div>
+<div class="calc-field"><label>Killip 分级</label><select id="grace_killip"><option value="1">Ⅰ</option><option value="2">Ⅱ</option><option value="3">Ⅲ</option><option value="4">Ⅳ</option></select></div>
+</div>
+<div class="calc-check-grid">
+<label class="calc-checkbox"><input type="checkbox" id="grace_ca"> 入院时心脏骤停 (+39分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="grace_st"> ST段偏移 (+28分)</label>
+<label class="calc-checkbox"><input type="checkbox" id="grace_enz"> 心肌标志物升高 (+14分)</label>
+</div>
+<div class="calc-action-bar"><button class="btn btn-primary" onclick="calcGRACE()">⚡ 计算 GRACE 评分</button></div>
+<div class="calc-result-box" id="res_grace" style="display:none"></div>
+</div>
 </div>
 </div>
 
@@ -988,76 +1202,40 @@
 </div>
 </div>
 
-<div class="calc-card">
-<div class="calc-card-header">
-<div><span>急重症</span> <b>SOFA 序贯器官衰竭评分</b></div>
-<div class="calc-source">📚 Vincent 1996 / SSC 2021</div>
 </div>
-<div class="calc-card-body">
-<div class="calc-form-grid">
-<div class="calc-field"><label>呼吸（PaO2/FiO2 或 SpO2）</label><select id="sofa_resp"><option value="0">0-≥400（SpO2≥93%）</option><option value="1">1-300~399</option><option value="2">2-200~299</option><option value="3">3-100~199 伴机械通气</option><option value="4">4-&lt;100 伴机械通气</option></select></div>
-<div class="calc-field"><label>凝血（血小板 ×10⁹/L）</label><select id="sofa_coag"><option value="0">0-≥150</option><option value="1">1-100~149</option><option value="2">2-50~99</option><option value="3">3-20~49</option><option value="4">4-&lt;20</option></select></div>
-<div class="calc-field"><label>肝脏（胆红素 μmol/L）</label><select id="sofa_liver"><option value="0">0-&lt;20</option><option value="1">1-20~32</option><option value="2">2-33~101</option><option value="3">3-102~204</option><option value="4">4-&gt;204</option></select></div>
-<div class="calc-field"><label>循环（MAP/血管活性药）</label><select id="sofa_cv"><option value="0">0-MAP≥70</option><option value="1">1-MAP&lt;70</option><option value="2">2-多巴胺≤5 或多巴酚丁胺</option><option value="3">3-多巴胺&gt;5 或肾上腺素≤0.1</option><option value="4">4-多巴胺&gt;15 或肾上腺素&gt;0.1</option></select></div>
-<div class="calc-field"><label>神经（GCS）</label><select id="sofa_neuro"><option value="0">0-15</option><option value="1">1-13~14</option><option value="2">2-10~12</option><option value="3">3-6~9</option><option value="4">4-&lt;6</option></select></div>
-<div class="calc-field"><label>肾脏（肌酐 μmol/L 或尿量）</label><select id="sofa_renal"><option value="0">0-&lt;110</option><option value="1">1-110~170</option><option value="2">2-171~299</option><option value="3">3-300~440 或尿量&lt;500ml/d</option><option value="4">4-&gt;440 或尿量&lt;200ml/d</option></select></div>
-</div>
-<div class="calc-action-bar"><button class="btn btn-primary" onclick="calcSOFA()">⚡ 计算 SOFA 评分</button></div>
-<div class="calc-result-box" id="res_sofa" style="display:none"></div>
 </div>
 </div>
 
-<div class="calc-card">
-<div class="calc-card-header">
-<div><span>心血管/急诊</span> <b>GRACE ACS 风险评分</b></div>
-<div class="calc-source">📚 GRACE 2.0/1.0 风险模型</div>
+<!-- ===== 用药助手 Panel ===== -->
+<div class="tab-panel" id="panel-drugAssistant">
+<div class="drug-assistant-container">
+<div class="drug-hero">
+<div class="drug-hero-content">
+<h2>💊 临床合理用药与处方速查助手</h2>
+<p>收录约 175 种临床循证常用药物，覆盖抗感染、心血管、呼吸、消化、内分泌、急救等 14 大类，每味均含【药理作用 / 药物作用机制】与【药代动力学特征】一键查询，并支持用法用量、配伍禁忌、eGFR 肾功调量及出院带药录入</p>
+<p class="drug-hero-disclaimer">⚠️ 本库资料仅供临床医师参考，具体用药以最新版药品说明书、药典及现行诊疗指南为准</p>
 </div>
-<div class="calc-card-body">
-<div class="calc-form-grid">
-<div class="calc-field"><label>年龄 (岁)</label><input type="number" id="grace_age" value="60" min="20" max="120"></div>
-<div class="calc-field"><label>心率 (次/分)</label><input type="number" id="grace_hr" value="90" min="20" max="250"></div>
-<div class="calc-field"><label>收缩压 (mmHg)</label><input type="number" id="grace_sbp" value="130" min="50" max="250"></div>
-<div class="calc-field"><label>肌酐 (mg/dL)</label><input type="number" id="grace_cr" value="1.0" step="0.1" min="0.1" max="20"></div>
-<div class="calc-field"><label>Killip 分级</label><select id="grace_killip"><option value="1">Ⅰ</option><option value="2">Ⅱ</option><option value="3">Ⅲ</option><option value="4">Ⅳ</option></select></div>
-</div>
-<div class="calc-check-grid">
-<label class="calc-checkbox"><input type="checkbox" id="grace_ca"> 入院时心脏骤停 (+39分)</label>
-<label class="calc-checkbox"><input type="checkbox" id="grace_st"> ST段偏移 (+28分)</label>
-<label class="calc-checkbox"><input type="checkbox" id="grace_enz"> 心肌标志物升高 (+14分)</label>
-</div>
-<div class="calc-action-bar"><button class="btn btn-primary" onclick="calcGRACE()">⚡ 计算 GRACE 评分</button></div>
-<div class="calc-result-box" id="res_grace" style="display:none"></div>
-</div>
-</div>
-</div>
-<div class="calc-cat-panel" id="calc-cat-common">
-<div class="calc-card">
-<div class="calc-card-header">
-<div><span>基础体征</span> <b>BMI 体重指数</b></div>
-<div class="calc-source">📚 中国成人体重判定标准（WS/T 428-2013）</div>
-</div>
-<div class="calc-card-body">
-<div class="calc-form-grid">
-<div class="calc-field"><label>身高 (cm)</label><input type="number" id="bmi_height" value="170" min="50" max="250"></div>
-<div class="calc-field"><label>体重 (kg)</label><input type="number" id="bmi_weight" value="65" min="1" max="300"></div>
-</div>
-<div class="calc-action-bar"><button class="btn btn-primary" onclick="calcBMI()">⚡ 计算 BMI</button></div>
-<div class="calc-result-box" id="res_bmi" style="display:none"></div>
+<div class="drug-search-bar">
+<input type="text" class="drug-search-input" placeholder="🔍 搜索药物名称 / 通用名 / 商品名 / 拼音首字母 (如: tbfx / aspl)..." oninput="DrugAssistant.onSearch(this.value)">
 </div>
 </div>
 
-<div class="calc-card">
-<div class="calc-card-header">
-<div><span>产科</span> <b>孕周与预产期计算</b></div>
-<div class="calc-source">📚 Naegele 法（280天）</div>
+<div class="drug-main-layout">
+<!-- 药物分类与列表侧栏 -->
+<div class="drug-sidebar">
+<div class="drug-categories" id="drugCategoryList"></div>
+<div class="drug-list-header">
+<span>药品列表</span>
+<span class="drug-count-badge" id="drugCountBadge">加载中...</span>
 </div>
-<div class="calc-card-body">
-<div class="calc-form-grid">
-<div class="calc-field"><label>末次月经 LMP</label><input type="date" id="preg_lmp"></div>
-<div class="calc-field"><label>评估日期（留空为今天）</label><input type="date" id="preg_on"></div>
+<div class="drug-list-scroll" id="drugListContainer"></div>
 </div>
-<div class="calc-action-bar"><button class="btn btn-primary" onclick="calcPreg()">⚡ 计算孕周/预产期</button></div>
-<div class="calc-result-box" id="res_preg" style="display:none"></div>
+
+<!-- 药物详细信息主卡片 -->
+<div class="drug-content-area" id="drugDetailContainer">
+<div class="drug-empty-detail">
+<div style="font-size:36px;margin-bottom:10px">💊</div>
+<div>正在加载药物数据...</div>
 </div>
 </div>
 </div>
@@ -1134,8 +1312,14 @@
 <script src="js/data/internal.js"></script>
 <script src="js/data/obgyn.js"></script>
 <script src="js/data/pedia.js"></script>
+<script src="js/data/drugs_data_1.js"></script>
+<script src="js/data/drugs_data_2.js"></script>
+<script src="js/data/drugs_data_3.js"></script>
+<script src="js/data/drugs_data_4.js"></script>
+<script src="js/data/drugs.js"></script>
 <script src="js/modules/calc_core.js"></script>
 <script src="js/modules/calculators.js"></script>
+<script src="js/modules/drug_assistant.js"></script>
 <script src="js/modules/ai_chat.js"></script>
 <script src="js/modules/pe_engine.js"></script>
 <script src="js/modules/intro.js"></script>

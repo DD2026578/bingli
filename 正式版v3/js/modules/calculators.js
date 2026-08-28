@@ -11,6 +11,17 @@ function switchCalcCat(catId, btnEl){
     if(panel) panel.classList.add('active');
 }
 
+// 切换复合卡片内部子选项卡
+function switchCalcSub(panelId, btnEl){
+  const card = btnEl.closest('.calc-card');
+  if(!card) return;
+  card.querySelectorAll('.calc-subtab').forEach(function(b){ b.classList.remove('active'); });
+  btnEl.classList.add('active');
+  card.querySelectorAll('.calc-subpanel').forEach(function(p){ p.classList.remove('active'); });
+  const panel = document.getElementById(panelId);
+  if(panel) panel.classList.add('active');
+}
+
 // 结果复制辅助函数
 function copyResultToRecord(text){
     if (window.copyToClipboard) {
@@ -304,6 +315,175 @@ function calcPedia(){
     `, resText);
 }
 
+// 补液工具 A. 成人等渗性脱水补液量
+function calcIsotonicFluid(){
+    const weight = parseFloat(document.getElementById('isofluid_weight').value);
+    const degree = document.getElementById('isofluid_degree').value;
+    const loss = parseFloat(document.getElementById('isofluid_loss').value || '0');
+    if(!validNum(weight, 1, 300, '体重') || !validNum(loss, 0, 10000, '持续丢失量')) return;
+
+    const degreeMap = { 'mild': {pct:0.03, label:'轻度(3%)'}, 'mod': {pct:0.05, label:'中度(5%)'}, 'severe': {pct:0.08, label:'重度(8%)'} };
+    const dg = degreeMap[degree] || degreeMap.mild;
+
+    const deficit = weight * dg.pct * 1000;   // 累计失液量 ml
+    const firstHalf = deficit * 0.5;           // 首日补 1/2
+    const physiologic = 2000;                  // 成人日生理需要量
+    const totalToday = firstHalf + physiologic + loss;
+
+    let fluidAdvice = '';
+    if(degree === 'mild') fluidAdvice = '轻度脱水：可口服补液或静脉输注平衡液 / 0.9% 生理盐水(NS)。';
+    else fluidAdvice = '中重度脱水：遵循「先盐后糖」原则，首日先给予含钠液（NS:5%GS ≈ 2:1），分阶段补充，密切监测尿量（应 ≥ 40 ml/h）及生命体征、血电解质。';
+
+    const fluidMethod = degree === 'mild'
+        ? '轻度：口服补液盐(ORS)/平衡液(乳酸或醋酸林格)/0.9%NS，可口服或静脉'
+        : '中重度：0.9%NS:5%GS≈2:1（可配平衡液）静脉滴注，见尿补钾（尿量≥40ml/h后加钾）';
+
+    const resText = `【成人等渗性脱水补液量评估】\n• 体重 ${weight} kg，脱水程度 ${dg.label}\n• 累计失液量: ${deficit.toFixed(0)} ml\n• 首日补充量(累计失液量的1/2): ${firstHalf.toFixed(0)} ml\n• 每日生理需要量(成人): ${physiologic} ml\n• 当日持续丢失量: ${loss} ml\n• 当日补液总量: ${totalToday.toFixed(0)} ml（首日1/2 + 生理需要量 + 持续丢失量）\n• 输液性质建议: ${fluidAdvice}\n• 所用液体与补液方法: ${fluidMethod}\n• 依据指南: 人卫第10版《外科学》水、电解质代谢紊乱（等渗性脱水补液原则）`;
+
+    showCalcResult('res_isofluid', `<div><strong>当日补液总量 = ${totalToday.toFixed(0)} ml</strong>（累计失液 ${deficit.toFixed(0)}ml 的首日1/2 ${firstHalf.toFixed(0)}ml + 生理需要量 ${physiologic}ml + 持续丢失 ${loss}ml）</div>
+    <div style="margin-top:4px;color:#334155">💡 ${fluidAdvice}</div>
+    <div style="margin-top:4px;color:#334155">🧪 所用液体与补液方法: ${fluidMethod}</div>`, resText);
+}
+
+// 补液工具 B. 每日生理需要量（维持液）
+function calcMaintenanceFluid(){
+    const weight = parseFloat(document.getElementById('mainfluid_weight').value);
+    if(!validNum(weight, 1, 300, '体重')) return;
+
+    // 成人法：30-40 ml/kg/day，取中位 35
+    const adultTotal = weight * 35;
+    const adultRate = adultTotal / 24;
+
+    // 4-2-1 法（按每小时速率换算 24h 总量作为对比）
+    let hourly = 0;
+    if(weight <= 10) hourly = 4 * weight;
+    else if(weight <= 20) hourly = 40 + 2 * (weight - 10);
+    else hourly = 60 + 1 * (weight - 20);
+    const daily421 = hourly * 24;
+
+    const resText = `【每日生理需要量（维持液）评估】\n• 体重 ${weight} kg\n• 成人法(30-40ml/kg/day，取中位35): 24h总量 ${adultTotal.toFixed(0)} ml，每小时约 ${adultRate.toFixed(1)} ml/h\n• 4-2-1 法(对照): 每小时 ${hourly.toFixed(0)} ml/h，24h总量 ${daily421.toFixed(0)} ml\n• 输液方案建议: 以基础葡萄糖液 + 适量电解质为主；每日参考需量：氯化钠 4-6 g、K 3-4 g\n• 监测提示: 记录出入量与尿量，关注热卡摄入，动态复查血电解质\n• 所用液体与补液方法: 5%GS/10%GS + 0.9%NS(或5%葡萄糖氯化钠) + 10%KCl(浓度≤0.3%)，亦可用复方氯化钠；禁食者静脉滴注24h匀速、能进食者口服为主；配比示例：0.9%NS 500ml(含NaCl约4.5g) + 5%GS 1000ml + 10%KCl 30ml 分瓶滴注，速度约80-120ml/h（视总量）\n• 依据指南: 《中国临床液体治疗专家共识》/ 人卫《外科学》`;
+
+    showCalcResult('res_mainfluid', `<div><strong>成人法 24h 维持量 = ${adultTotal.toFixed(0)} ml（约 ${adultRate.toFixed(1)} ml/h）</strong> | 4-2-1法 24h = ${daily421.toFixed(0)} ml</div>
+    <div style="margin-top:4px;color:#334155">💡 参考日需量：Na 4-6g、K 3-4g；监测出入量/尿量与热卡</div>
+    <div style="margin-top:4px;color:#334155">🧪 所用液体与补液方法: 0.9%NS 500ml + 5%GS 1000ml + 10%KCl 30ml 分瓶滴注，速度约80-120ml/h（视总量）</div>`, resText);
+}
+
+// 补液工具 C. 高渗性脱水/高钠血症自由水缺乏量
+function calcFreeWaterDeficit(){
+    const weight = parseFloat(document.getElementById('fwdeficit_weight').value);
+    const na = parseFloat(document.getElementById('fwdeficit_na').value);
+    const gender = document.getElementById('fwdeficit_gender').value;
+    if(!validNum(weight, 1, 300, '体重') || !validNum(na, 141, 200, '血钠')) return;
+
+    const factor = gender === 'female' ? 0.5 : 0.6;
+    const deficitL = factor * weight * (1 - 140 / na);
+    const deficitMl = deficitL * 1000;
+
+    const resText = `【高渗性脱水/高钠血症自由水缺乏量】\n• 体重 ${weight} kg，实测血钠 ${na} mmol/L，系数 ${factor}\n• 自由水缺乏量: ${deficitL.toFixed(2)} L（公式: 0.6/0.5 × 体重 × (1 − 140/血钠)，单位升）\n• 累计缺水量: ${deficitMl.toFixed(0)} ml\n• 补液建议: 轻度可输注 5% GS 或 0.45% 氯化钠（半张盐）；血钠每小时下降不超过 0.5~1 mmol/L，24h 内血钠下降不超过 10 mmol/L，避免渗透性脱髓鞘综合征\n• 闭环提示: 若为低钠血症请使用「阴离子隙(AG)与补钠」工具计算补钠量\n• 所用液体与补液方法: 5%GS（纯自由水、无电解质）或0.45%氯化钠（半张），能口服者凉开水/白开水；轻症口服、重症静脉；血钠每小时下降≤0.5-1mmol/L、24h≤10mmol/L（防渗透性脱髓鞘）；先补计算缺乏量的1/2分次补充，2-3日逐渐纠正，每2-4h复查血钠\n• 依据指南: 人卫第10版《内科学》高钠血症治疗 / 《哈里森内科学》`;
+
+    showCalcResult('res_fwdeficit', `<div><strong>自由水缺乏量 = ${deficitL.toFixed(2)} L（累计缺水量 ${deficitMl.toFixed(0)} ml）</strong></div>
+    <div style="margin-top:4px;color:#334155">💡 血钠每小时下降 ≤ 0.5~1 mmol/L，24h 内下降 ≤ 10 mmol/L（防渗透性脱髓鞘）</div>
+    <div style="margin-top:4px;color:#334155">🧪 所用液体与补液方法: 5%GS或0.45%氯化钠（半张）；先补计算缺乏量的1/2分次补充，2-3日逐渐纠正，每2-4h复查血钠</div>`, resText);
+}
+
+// 补液工具 D. 代谢性酸中毒补碱量（碳酸氢钠）
+function calcBicarbDose(){
+    const weight = parseFloat(document.getElementById('bicarb_weight').value);
+    if(!validNum(weight, 1, 300, '体重')) return;
+    const beVal = parseFloat(document.getElementById('bicarb_be').value);
+    const hco3Val = parseFloat(document.getElementById('bicarb_hco3').value);
+
+    let dose = 0, methodText = '';
+    if(!isNaN(beVal)){
+        if(!validNum(beVal, -30, 0, '碱剩余BE')) return;
+        if(beVal === 0){ if(window.showToast) window.showToast('✅ 碱剩余 BE = 0，酸碱平衡正常，无需补碱'); return; }
+        dose = Math.abs(beVal) * 0.3 * weight;
+        methodText = `按碱剩余 BE = ${beVal} mmol/L 计算（补碱mmol = |BE| × 0.3 × 体重）`;
+    } else if(!isNaN(hco3Val)){
+        if(!validNum(hco3Val, 5, 24, '碳酸氢根')) return;
+        dose = (24 - hco3Val) * 0.3 * weight;
+        methodText = `按碳酸氢根 HCO₃⁻ = ${hco3Val} mmol/L 计算（补碱mmol = (24 − 实测) × 0.3 × 体重）`;
+    } else {
+        if(window.showToast) window.showToast('⚠️ 请至少填写碱剩余BE或碳酸氢根HCO₃⁻其中一项！');
+        return;
+    }
+
+    const bicarbMl = dose / 0.6;             // 5% NaHCO3 ml（1ml ≈ 0.6mmol）
+    const bottles = Math.ceil(bicarbMl / 250); // 250ml/瓶
+
+    const resText = `【代谢性酸中毒补碱量（碳酸氢钠）】\n• 体重 ${weight} kg；${methodText}\n• 补碱量: ${dose.toFixed(0)} mmol\n• 5% 碳酸氢钠溶液: ${bicarbMl.toFixed(0)} ml（1ml 5%NaHCO3 ≈ 0.6mmol，ml = mmol/0.6）\n• 约合 250ml/瓶: ${bottles} 瓶\n• 安全提示: 先补计算量的 1/2，复测血气后再定；重度酸中毒（pH < 7.2）才考虑静脉补碱，滴注速度不宜过快\n• 所用液体与补液方法: 5%碳酸氢钠注射液(250ml/瓶)，需缓慢可稀释为1.4%等渗液（5%液1份+5%GS或灭菌注射用水2.5份）；先补计算量1/2（30-60min）复测血气后再定余量；速度不宜过快（成人≤200ml/h），防高钠、容量超负荷、渗透压骤升；补碱致低钾须监测并酌情补钾\n• 依据指南: 《内科学》酸碱平衡 / 临床补碱原则`;
+
+    showCalcResult('res_bicarb', `<div><strong>补碱量 = ${dose.toFixed(0)} mmol | 5% NaHCO₃ ${bicarbMl.toFixed(0)} ml（约 ${bottles} 瓶/250ml）</strong></div>
+    <div style="margin-top:4px;color:#334155">⚠️ 先补计算量的 1/2，复测血气后再定；pH<7.2 才考虑静脉补碱，速度不宜过快</div>
+    <div style="margin-top:4px;color:#334155">🧪 所用液体与补液方法: 5%NaHCO3(可稀释为1.4%等渗液)，先补1/2(30-60min)复测血气；速度成人≤200ml/h，防高钠、容量超负荷、补碱致低钾</div>`, resText);
+}
+
+// 补液工具 E. 低钾血症补钾量
+function calcKReplacement(){
+    const weight = parseFloat(document.getElementById('kcl_weight').value);
+    const k = parseFloat(document.getElementById('kcl_k').value);
+    if(!validNum(weight, 1, 300, '体重') || !validNum(k, 1.0, 3.9, '血钾')) return;
+
+    const deficit = (4.0 - k) * weight * 0.3;  // mmol
+    const kclMl = deficit / 1.34;               // 10% KCl ml（1ml ≈ 1.34mmol）
+    const mixKclMl = Math.min(Math.ceil(kclMl * 500 / 1000), 15); // 0.9%NS 500ml 中 10%KCl 配液量（≤15ml 保证浓度≤0.3%）
+
+    const resText = `【低钾血症补钾量评估】\n• 体重 ${weight} kg，实测血钾 ${k} mmol/L\n• 缺钾量估计: ${deficit.toFixed(0)} mmol\n• 10% 氯化钾注射液: ${kclMl.toFixed(0)} ml（1ml 10%KCl ≈ 1.34mmol，ml = mmol/1.34）\n• 补钾途径建议: 口服补钾优先；静脉补钾浓度一般 ≤ 0.3%（1000ml 液体中 ≤ 30ml 10%KCl）、滴速一般 ≤ 10-20 mmol/h、每日总量一般 ≤ 3-6g（约 40-80mmol）\n• 监测提示: 心电监护，尿量 > 30ml/h 后再补钾，动态复查血钾\n• 所用液体与补液方法: 口服优先（10%KCl口服液/缓释片/枸橼酸钾颗粒）；静脉配液示例：0.9%NS 500ml + 10%KCl ${mixKclMl} ml（浓度≤0.3%，需分瓶/缓慢滴注）；见尿补钾（尿量>30ml/h）、心电监护\n• 依据指南: 《内科学》低钾血症 / 临床补钾规范`;
+
+    showCalcResult('res_kcl', `<div><strong>缺钾量 = ${deficit.toFixed(0)} mmol | 10% KCl ${kclMl.toFixed(0)} ml</strong></div>
+    <div style="margin-top:4px;color:#334155">⚠️ 静脉浓度 ≤0.3%（1000ml中≤30ml 10%KCl）、滴速 ≤10-20mmol/h；尿量>30ml/h再补，心电监护</div>
+    <div style="margin-top:4px;color:#334155">🧪 所用液体与补液方法: 口服优先；0.9%NS 500ml + 10%KCl ${mixKclMl} ml（浓度≤0.3%，分瓶/缓慢滴注）</div>`, resText);
+}
+
+// 补液工具 F. 低镁血症补镁量
+function calcMgReplacement(){
+    const weight = parseFloat(document.getElementById('mg_weight').value);
+    const mg = parseFloat(document.getElementById('mg_val').value);
+    if(!validNum(weight, 1, 300, '体重') || !validNum(mg, 0.1, 0.74, '血镁')) return;
+
+    const deficit = (0.8 - mg) * weight * 0.3;  // 细胞外缺镁估算 mmol
+    const severe = mg < 0.5;
+    const severityText = severe ? '重度' : '轻中度';
+    const dailyMgText = severe
+        ? '每日 25% 硫酸镁 20-40ml（含 Mg²⁺ 20-40mmol）分次静滴；症状性（心律失常/抽搐）先 25% 硫酸镁 10-20ml 稀释至 20-40ml 后 10-20min 缓慢静注'
+        : '每日 25% 硫酸镁 10-20ml（含 Mg²⁺ 10-20mmol）加入 5%GS/0.9%NS 250-500ml 缓慢静滴，每日 1-2 次，连用 3-5 天';
+    const routeText = severe ? '静脉分次滴注；症状性可先稀释后 10-20min 缓慢静注' : '静脉缓慢滴注，每日 1-2 次';
+
+    const resText = `【低镁血症补镁量评估】\n• 体重 ${weight} kg，实测血镁 ${mg} mmol/L（正常 0.75-1.0 mmol/L）\n• 细胞外缺镁估算: ${deficit.toFixed(1)} mmol（仅供参考，血镁仅反映人体约1%总镁，实际总缺镁约为理论估算的5-10倍，临床以经验法分次补充为主）\n• 严重程度: ${severityText}低镁血症\n• 建议每日补镁量（经验法）: ${dailyMgText}\n• 换算: 25% 硫酸镁 1ml ≈ 1mmol Mg²⁺\n• 途径建议: ${routeText}\n• 安全提示: 静注过快可致低血压甚至心脏骤停；监测膝腱反射（减弱示镁中毒）、呼吸与血压；肾功能不全（eGFR<30）减量或慎用；与洋地黄类合用慎用；口服可选用门冬氨酸钾镁/氧化镁\n• 所用液体与补液方法: 25%硫酸镁注射液（10ml:2.5g，1ml≈1mmol Mg²⁺）加入 5%GS/0.9%NS 250-500ml 缓慢静滴；重度分次、症状性先稀释后缓慢静注；监测膝腱反射/呼吸/血压；肾功能不全减量；静注过快可致低血压甚至心脏骤停\n• 依据指南: 《内科学》电解质紊乱 / 临床补镁规范`;
+
+    showCalcResult('res_mg', `<div><strong>细胞外缺镁估算 = ${deficit.toFixed(1)} mmol | ${severityText}低镁血症</strong></div>
+    <div style="margin-top:4px;color:#334155">💊 每日建议补镁：25%硫酸镁 ${severe ? '20-40ml（20-40mmol）分次静滴' : '10-20ml（10-20mmol）加入液体缓慢静滴，每日1-2次'}；症状性（心律失常/抽搐）先稀释后 10-20min 缓慢静注</div>
+    <div style="margin-top:4px;color:#334155">⚠️ 血镁仅反映约1%总镁，估算仅供参考；静注过快致低血压/心脏骤停；监测膝腱反射、呼吸、血压；肾功能不全（eGFR<30）减量或慎用；与洋地黄合用慎用</div>
+    <div style="margin-top:4px;color:#334155">🧪 所用液体与补液方法: 25%硫酸镁（1ml≈1mmol Mg²⁺）加入 5%GS/0.9%NS 缓慢静滴；稳定后口服门冬氨酸钾镁/氧化镁维持</div>`, resText);
+}
+
+// 补液工具 G. 低磷血症补磷量
+function calcPReplacement(){
+    const weight = parseFloat(document.getElementById('p_weight').value);
+    const p = parseFloat(document.getElementById('p_val').value);
+    if(!validNum(weight, 1, 300, '体重') || !validNum(p, 0.1, 0.84, '血磷')) return;
+
+    const deficit = (1.0 - p) * weight * 0.5;  // 缺磷量 mmol
+    const glyMl = deficit;                      // 1ml 甘油磷酸钠 ≈ 1mmol 磷
+    const bottles = Math.ceil(glyMl / 10);      // 10ml/支，向上取整
+    let severityText = '';
+    if(p < 0.3) severityText = '重度';
+    else if(p < 0.7) severityText = '轻中度';
+    else severityText = '边缘';
+    const ivLow = (0.2 * weight).toFixed(0);
+    const ivHigh = (0.5 * weight).toFixed(0);
+    let recText = '';
+    if(severityText === '重度') recText = `静脉补磷 0.2-0.5 mmol/kg/日（本例 ${ivLow}-${ivHigh} mmol/日，甘油磷酸钠 10-20ml/日缓慢静滴），重症可至 1.0 mmol/kg/日`;
+    else recText = '轻中度/边缘可口服磷酸盐（能口服者口服更安全）';
+
+    const resText = `【低磷血症补磷量评估】\n• 体重 ${weight} kg，实测血磷 ${p} mmol/L（正常 0.85-1.45 mmol/L）\n• 缺磷量估算: ${deficit.toFixed(1)} mmol（仅供参考）\n• 甘油磷酸钠注射液: ${glyMl.toFixed(1)} ml（1ml ≈ 1mmol 磷）≈ ${bottles} 支（10ml/支）\n• 严重程度: ${severityText}低磷血症\n• 经验推荐: ${recText}\n• 途径建议: 口服优先于静脉（能口服者口服更安全）；静脉补磷仅用于重度\n• 安全提示: 补磷过快可致低钙血症/抽搐，需监测血磷与血钙；低磷常合并低镁低钾，应同时纠正；肾功能不全注意；依据血磷/血钙动态调整\n• 所用液体与补液方法: 甘油磷酸钠注射液（10ml:2.16g，1ml≈1mmol磷，10ml/支）加入 0.9%NS/5%GS 缓慢静滴；轻中度口服磷酸盐（磷酸二氢钠/磷酸钾）；补磷常同时补充镁钾；补磷过快致低钙抽搐，需监测血磷血钙\n• 依据指南: 《内科学》电解质紊乱 / 临床补磷规范`;
+
+    showCalcResult('res_p', `<div><strong>缺磷量 = ${deficit.toFixed(1)} mmol | 甘油磷酸钠 ${glyMl.toFixed(1)} ml（约 ${bottles} 支/10ml）| ${severityText}低磷血症</strong></div>
+    <div style="margin-top:4px;color:#334155">💊 经验推荐：${recText}</div>
+    <div style="margin-top:4px;color:#334155">⚠️ 补磷过快致低钙抽搐，监测血磷血钙；低磷常伴低镁低钾应同时纠正</div>
+    <div style="margin-top:4px;color:#334155">🧪 所用液体与补液方法: 甘油磷酸钠加入 0.9%NS/5%GS 缓慢静滴；口服磷酸盐优先</div>`, resText);
+}
+
 // 11. MELD 终末期肝病评分
 function calcMELD(){
     const tbil = parseFloat(document.getElementById('meld_tbil').value);
@@ -545,33 +725,6 @@ function calcTIMI(){
     showCalcResult('res_timi', `<div><strong>TIMI 评分 = ${score} / 7 分</strong></div>
     <div style="margin-top:4px;color:#334155">${risk}</div>
     `, resText);
-}
-
-// 21. BMI
-function calcBMI(){
-    const w = parseFloat(document.getElementById('bmi_weight').value);
-    const h = parseFloat(document.getElementById('bmi_height').value);
-    if(!validNum(w, 1, 300, '体重') || !validNum(h, 50, 250, '身高')) return;
-    const bmi = CalcCore.bmi(w, h);
-    let status = '';
-    if(bmi < 18.5) status = '偏瘦';
-    else if(bmi < 24) status = '正常范围';
-    else if(bmi < 28) status = '超重';
-    else status = '肥胖';
-    const resText = `【BMI 体重指数】\n• BMI: ${bmi.toFixed(1)} kg/m²（${status}）\n• 依据标准: 中国成人体重判定标准（WS/T 428-2013）`;
-    showCalcResult('res_bmi', `<div><strong>BMI = ${bmi.toFixed(1)} kg/m²（${status}）</strong></div>`, resText);
-}
-
-// 22. 孕周与预产期
-function calcPreg(){
-    const lmp = document.getElementById('preg_lmp').value;
-    const on = document.getElementById('preg_on').value || undefined;
-    if(!lmp){ if(window.showToast) window.showToast('⚠️ 请选择末次月经日期！'); return; }
-    const r = CalcCore.gestationalAge(lmp, on);
-    if(!r){ if(window.showToast) window.showToast('⚠️ 日期无效或晚于当前日期，请核对！'); return; }
-    const edcStr = r.edc.getFullYear() + '-' + String(r.edc.getMonth()+1).padStart(2,'0') + '-' + String(r.edc.getDate()).padStart(2,'0');
-    const resText = `【孕周与预产期】\n• 末次月经（LMP）: ${lmp}\n• 当前孕周: ${r.weeks}周+${r.days}天\n• 预产期（EDC）: ${edcStr}\n• 依据标准: 末次月经推算（Naegele 法，280天）`;
-    showCalcResult('res_preg', `<div><strong>孕 ${r.weeks} 周 + ${r.days} 天 ｜ 预产期 ${edcStr}</strong></div>`, resText);
 }
 
 // 23. QTc（Bazett）

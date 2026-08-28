@@ -101,6 +101,10 @@ html[data-theme="dark"] .calc-nav-btn { background:#17233d!important;border-colo
 html[data-theme="dark"] .calc-nav-btn:hover { background:rgba(56,189,248,0.15)!important;color:#38bdf8!important; }
 html[data-theme="dark"] .calc-nav-btn.active { background:#0284c7!important;color:#fff!important;border-color:#38bdf8!important;box-shadow:0 4px 12px rgba(2,132,199,.4)!important; }
 
+html[data-theme="dark"] .calc-subtab { background:#17233d!important;border-color:#253556!important;color:#94a3b8!important; }
+html[data-theme="dark"] .calc-subtab:hover { background:rgba(56,189,248,0.15)!important;color:#38bdf8!important; }
+html[data-theme="dark"] .calc-subtab.active { background:#0284c7!important;color:#fff!important;border-color:#38bdf8!important;box-shadow:0 4px 12px rgba(2,132,199,.4)!important; }
+
 html[data-theme="dark"] .calc-card { background:#152038!important;border-color:#212e4a!important;color:#e2e8f0!important; }
 html[data-theme="dark"] .calc-card:hover { border-color:#38bdf8!important;box-shadow:0 4px 16px rgba(56,189,248,0.15)!important; }
 html[data-theme="dark"] .calc-card-header { background:linear-gradient(135deg,#1c2b4c,#1e2e52)!important;color:#f8fafc!important;border-bottom-color:#212e4a!important; }
@@ -133,6 +137,38 @@ html[data-theme="dark"] .ai-tools .tool-item { background:#17233d!important; bor
 html[data-theme="dark"] .ai-tools .tool-item:hover { background:rgba(56,189,248,0.15)!important; border-color:#38bdf8!important; color:#38bdf8!important; }
 html[data-theme="dark"] .ai-prompt-box textarea { background:#0f172a!important; border-color:#212e4a!important; color:#f1f5f9!important; }
 html[data-theme="dark"] .ai-prompt-box textarea:focus { border-color:#38bdf8!important; box-shadow:0 0 0 3px rgba(56,189,248,0.25)!important; }
+
+/* 用药助手全方位暗黑模式适配 */
+html[data-theme="dark"] .drug-assistant-container { background:#131c31!important; border-color:#212e4a!important; color:#e2e8f0!important; }
+html[data-theme="dark"] .drug-hero { border-bottom-color:#212e4a!important; }
+html[data-theme="dark"] .drug-hero h2 { color:#f8fafc!important; }
+html[data-theme="dark"] .drug-hero p { color:#94a3b8!important; }
+html[data-theme="dark"] .drug-search-input { background:#0f172a!important; border-color:#212e4a!important; color:#f1f5f9!important; }
+html[data-theme="dark"] .drug-search-input:focus { border-color:#38bdf8!important; box-shadow:0 0 0 3px rgba(56,189,248,0.25)!important; }
+html[data-theme="dark"] .drug-sidebar { border-color:#212e4a!important; }
+html[data-theme="dark"] .drug-cat-btn { background:#17233d!important; border-color:#253556!important; color:#94a3b8!important; }
+html[data-theme="dark"] .drug-cat-btn:hover { background:rgba(56,189,248,0.15)!important; color:#38bdf8!important; }
+html[data-theme="dark"] .drug-cat-btn.active { background:#0284c7!important; color:#fff!important; border-color:#38bdf8!important; }
+html[data-theme="dark"] .drug-list-header { background:linear-gradient(135deg,#17233d,#1a2745)!important; color:#cbd5e1!important; border-color:#212e4a!important; }
+html[data-theme="dark"] .drug-list-scroll { background:#101728!important; border-color:#212e4a!important; }
+html[data-theme="dark"] .drug-list-item { background:#152038!important; border-color:#212e4a!important; color:#e2e8f0!important; }
+html[data-theme="dark"] .drug-list-item:hover { background:rgba(56,189,248,0.12)!important; border-color:#38bdf8!important; }
+html[data-theme="dark"] .drug-list-item.active { background:#0284c7!important; color:#fff!important; border-color:#38bdf8!important; }
+html[data-theme="dark"] .drug-list-item.active .drug-item-sub,
+html[data-theme="dark"] .drug-list-item.active .drug-item-trade { color:rgba(255,255,255,0.85)!important; }
+html[data-theme="dark"] .drug-detail-card { background:#152038!important; border-color:#212e4a!important; }
+html[data-theme="dark"] .drug-detail-header { border-bottom-color:#212e4a!important; }
+html[data-theme="dark"] .drug-main-title { color:#f8fafc!important; }
+html[data-theme="dark"] .drug-sub-title { color:#94a3b8!important; }
+html[data-theme="dark"] .drug-info-block { background:#0f172a!important; border-color:#212e4a!important; color:#cbd5e1!important; }
+html[data-theme="dark"] .drug-info-block .drug-block-title { color:#f8fafc!important; border-bottom-color:#212e4a!important; }
+html[data-theme="dark"] .drug-tag { background:rgba(56,189,248,0.15)!important; color:#38bdf8!important; }
+html[data-theme="dark"] .drug-tag-badge { background:rgba(56,189,248,0.12)!important; color:#38bdf8!important; border-color:rgba(56,189,248,0.25)!important; }
+html[data-theme="dark"] .warning-border { border-color:rgba(248,113,113,0.4)!important; background:rgba(239,68,68,0.08)!important; }
+html[data-theme="dark"] .warning-title { color:#f87171!important; border-bottom-color:rgba(248,113,113,0.3)!important; }
+html[data-theme="dark"] .warning-text { color:#fca5a5!important; }
+html[data-theme="dark"] .drug-hero-disclaimer,
+html[data-theme="dark"] .drug-detail-disclaimer { color:#94a3b8!important; }
 
 /* 日夜间模式切换按钮样式 */
 .theme-toggle-btn { background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:20px;padding:4px 12px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;backdrop-filter:blur(10px);transition:var(--transition);display:inline-flex;align-items:center;margin-right:4px; }
@@ -372,6 +408,88 @@ body{background:#fff;font-size:12pt}
 .calc-result-box strong { color: #0e7490; font-size: 15px; }
 .calc-result-box .calc-insert-btn { margin-top: 8px; padding: 4px 12px; background: var(--c-primary); color: #fff; border: none; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
 .calc-result-box .calc-insert-btn:hover { background: var(--c-primary-dark); }
+.calc-fluid-guide { background: var(--c-primary-surface); border: 1px solid var(--c-border); border-left: 3px solid var(--c-primary); border-radius: var(--radius-sm); padding: 10px 12px; margin-bottom: 12px; }
+.calc-fluid-guide-title { font-weight: 700; font-size: 13px; color: var(--c-primary); margin-bottom: 6px; }
+.calc-fluid-guide-body { font-size: 12px; color: var(--c-text-secondary); line-height: 1.7; }
+.calc-fluid-guide-body strong { color: var(--c-text); }
+.calc-case-demo { background: var(--c-primary-surface); border: 1px dashed var(--c-border); border-left: 3px solid #10b981; border-radius: var(--radius-sm); padding: 10px 12px; margin-bottom: 12px; }
+.calc-case-demo-title { font-weight: 700; font-size: 13px; color: #10b981; margin-bottom: 6px; }
+.calc-case-demo-body { font-size: 12px; color: var(--c-text-secondary); line-height: 1.7; }
+.calc-case-demo-body strong { color: var(--c-text); }
+.calc-subtabs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+.calc-subtab { padding:6px 14px; font-size:13px; font-weight:600; border:1px solid var(--c-border); border-radius:999px; background:var(--c-surface); color:var(--c-text-secondary); cursor:pointer; }
+.calc-subtab:hover { border-color:var(--c-primary); color:var(--c-primary); }
+.calc-subtab.active { background:var(--c-primary); border-color:var(--c-primary); color:#fff; }
+.calc-subpanel { display:none; }
+.calc-subpanel.active { display:block; }
+
+/* ===== 用药助手专属布局与组件样式 ===== */
+.drug-assistant-container { background: var(--c-surface); border-radius: var(--radius-lg); padding: 25px; box-shadow: var(--shadow-md); border: 1px solid var(--c-border); }
+.drug-hero { display: flex; justify-content: space-between; align-items: center; gap: 20px; border-bottom: 2px solid var(--c-primary-surface); padding-bottom: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+.drug-hero-content h2 { font-size: 22px; color: var(--c-text); font-weight: 700; margin-bottom: 4px; }
+.drug-hero-content p { font-size: 13px; color: var(--c-text-secondary); }
+.drug-hero-content .drug-hero-disclaimer { font-size: 12px; color: var(--c-text-muted); margin-top: 8px; line-height: 1.5; }
+.drug-detail-disclaimer { font-size: 11px; color: var(--c-text-muted); margin-bottom: 12px; line-height: 1.6; }
+.drug-search-bar { min-width: 320px; flex: 1; max-width: 460px; }
+.drug-search-input { width: 100%; padding: 10px 16px; border: 2px solid var(--c-border); border-radius: 24px; font-size: 13px; outline: none; transition: var(--transition); background: var(--c-bg); color: var(--c-text); }
+.drug-search-input:focus { border-color: var(--c-primary); background: var(--c-surface); box-shadow: 0 0 0 3px rgba(14,116,144,.12); }
+
+.drug-main-layout { display: flex; gap: 20px; min-height: 600px; }
+.drug-sidebar { width: 320px; flex-shrink: 0; display: flex; flex-direction: column; gap: 12px; }
+.drug-categories { display: flex; flex-wrap: wrap; gap: 6px; }
+.drug-cat-btn { padding: 6px 12px; border: 1px solid var(--c-border); background: #f8fafc; border-radius: var(--radius-sm); font-size: 12px; font-weight: 600; cursor: pointer; color: var(--c-text-secondary); transition: var(--transition); display: inline-flex; align-items: center; gap: 5px; }
+.drug-cat-btn:hover { background: var(--c-primary-surface); color: var(--c-primary); }
+.drug-cat-btn.active { background: var(--c-primary); color: #fff; border-color: var(--c-primary); box-shadow: 0 2px 6px rgba(14,116,144,.25); }
+
+.drug-list-header { font-size: 13px; font-weight: 700; color: var(--c-text); display: flex; justify-content: space-between; align-items: center; padding: 4px 6px; }
+.drug-count-badge { font-size: 11px; color: var(--c-primary); background: var(--c-primary-surface); padding: 2px 8px; border-radius: 12px; font-weight: 600; }
+.drug-list-scroll { flex: 1; overflow-y: auto; max-height: 520px; display: flex; flex-direction: column; gap: 8px; padding-right: 4px; }
+.drug-list-scroll::-webkit-scrollbar { width: 4px; }
+.drug-list-scroll::-webkit-scrollbar-thumb { background: var(--c-border-dark); border-radius: 2px; }
+
+.drug-list-item { background: #fafbfc; border: 1px solid var(--c-border); border-radius: var(--radius-sm); padding: 10px 12px; cursor: pointer; transition: var(--transition); }
+.drug-list-item:hover { border-color: var(--c-primary); background: var(--c-primary-surface); transform: translateX(2px); }
+.drug-list-item.active { background: var(--c-primary); color: #fff; border-color: var(--c-primary); box-shadow: 0 2px 8px rgba(14,116,144,.25); }
+.drug-item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.drug-item-name { font-size: 13px; font-weight: 700; }
+.drug-item-sub { font-size: 11px; opacity: 0.8; }
+.drug-item-trade { font-size: 12px; opacity: 0.85; margin-bottom: 6px; }
+.drug-item-tags { display: flex; gap: 4px; flex-wrap: wrap; }
+.drug-tag { font-size: 10px; background: var(--c-primary-surface); color: var(--c-primary); padding: 1px 6px; border-radius: 3px; }
+.drug-list-item.active .drug-tag { background: rgba(255,255,255,0.25); color: #fff; }
+
+.drug-content-area { flex: 1; min-width: 0; }
+.drug-detail-card { background: #fff; border: 1px solid var(--c-border); border-radius: var(--radius-md); padding: 22px; }
+.drug-detail-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; border-bottom: 1px solid var(--c-border); padding-bottom: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+.drug-title-line { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+.drug-main-title { font-size: 20px; font-weight: 800; color: var(--c-text); }
+.drug-detail-badge { font-size: 12px; background: var(--c-primary-surface); color: var(--c-primary); padding: 3px 10px; border-radius: 12px; font-weight: 600; }
+.drug-sub-title { font-size: 13px; color: var(--c-text-secondary); }
+.drug-actions-group { display: flex; gap: 8px; }
+.drug-tags-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+.drug-tag-badge { font-size: 11px; background: var(--c-primary-surface); color: var(--c-primary); padding: 3px 10px; border-radius: 12px; font-weight: 500; border: 1px solid #bae6fd; }
+
+.drug-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.drug-info-block { background: #fafbfc; border: 1px solid var(--c-border); border-radius: var(--radius-sm); padding: 14px; }
+.drug-info-block.span-2 { grid-column: span 2; }
+.drug-info-block.primary-border { border-left: 4px solid var(--c-primary); }
+.drug-block-title { font-size: 13px; font-weight: 700; color: var(--c-text); display: flex; align-items: center; gap: 6px; margin-bottom: 8px; border-bottom: 1px dashed var(--c-border); padding-bottom: 6px; }
+.drug-icon-box { font-size: 14px; }
+.drug-block-content { font-size: 13px; line-height: 1.7; color: var(--c-text); }
+.drug-block-content.preserve-line { white-space: pre-line; }
+
+.warning-border { border-left: 4px solid #ef4444!important; background: #fff5f5; }
+.warning-title { color: #dc2626!important; }
+.warning-text { color: #b91c1c; }
+
+.drug-empty-state, .drug-empty-detail { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 50px 20px; text-align: center; color: var(--c-text-muted); }
+
+@media (max-width: 900px) {
+    .drug-main-layout { flex-direction: column; }
+    .drug-sidebar { width: 100%; }
+    .drug-info-grid { grid-template-columns: 1fr; }
+    .drug-info-block.span-2 { grid-column: span 1; }
+}
 
 /* =====================================================
    ===== 梦幻紫主题 (Dreamy Purple) =====
@@ -617,7 +735,7 @@ body.magic-revealed .right-panel{animation:magicRise .45s cubic-bezier(.22,1,.36
 .left-panel{width:250px}
 .main-container{padding:0 14px}
 .header-inner{padding:14px 20px}
-.record-form,.course-record,.cp-container,.ai-container,.calc-container{padding:24px}
+.record-form,.course-record,.cp-container,.ai-container,.calc-container,.drug-assistant-container{padding:24px}
 /* 生命体征行允许换行，避免窄屏横向溢出 */
 .pe-vitals{flex-wrap:wrap;gap:10px}
 }
@@ -644,7 +762,7 @@ body.magic-revealed .left-panel{animation:none}
 .header-badge .badge{display:none}
 .theme-toggle-btn{padding:3px 9px;font-size:11px}
 /* 5) 表单 */
-.record-form,.course-record{padding:16px 12px}
+.record-form,.course-record,.drug-assistant-container{padding:16px 12px}
 .form-title h2{font-size:20px;letter-spacing:6px}
 .course-title h2{font-size:18px}
 .section-content{font-size:13px}
