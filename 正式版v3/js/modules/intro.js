@@ -86,8 +86,11 @@
     if (!canvas || !ctx) return;
     dpr = window.devicePixelRatio || 1;
     var rect = canvas.getBoundingClientRect();
-    cw = canvas.width = Math.ceil(rect.width * dpr);
-    ch = canvas.height = Math.ceil(rect.height * dpr);
+    // 当 overlay 尚未完成布局时 rect 可能为 0，回退到视口尺寸，避免 cw/ch 为 0 导致除零
+    var cwRaw = rect ? (rect.width || window.innerWidth || 1) : (window.innerWidth || 1);
+    var chRaw = rect ? (rect.height || window.innerHeight || 1) : (window.innerHeight || 1);
+    cw = canvas.width = Math.max(1, Math.ceil(cwRaw * dpr));
+    ch = canvas.height = Math.max(1, Math.ceil(chRaw * dpr));
 
     // 确定心电基线 Y 坐标（精准穿过蛇杖中心）
     if (emblemSvg) {
@@ -132,6 +135,11 @@
   // ---- Canvas 渲染循环：红色光扫 + 真实荧光余辉 + 徽章心跳联动 ----
   function renderEcgLoop() {
     if (!ctx || exited) return;
+    // 兜底：若分辨率异常（0/NaN/Infinity）则重置为视口尺寸，避免除零与渐变绘制报错
+    if (!isFinite(cw) || !isFinite(ch) || cw < 1 || ch < 1 || !isFinite(sweepX) || !isFinite(sweepSpeed)) {
+      resizeCanvas();
+      sweepX = 0;
+    }
     time += 0.016;
     ctx.clearRect(0, 0, cw, ch);
 
@@ -198,21 +206,23 @@
     ctx.shadowBlur = 0;
 
     // 绘制扫描头顶端发光光斑
-    var curNorm = sweepX / cw;
+    var curNorm = cw > 0 ? (sweepX / cw) : 0;
     var curVal = getSingleEcgSample(curNorm);
-    var headY = centerY - curVal * amp;
+    var headY = isFinite(centerY) ? (centerY - curVal * amp) : (ch * 0.38 - curVal * amp);
     var spotRadius = 12 * dpr;
+    // 双保险：坐标任一非有限值时跳过光斑绘制（仅本次帧，不影响后续动画循环）
+    if (isFinite(sweepX) && isFinite(headY) && isFinite(spotRadius) && spotRadius > 0) {
+      var grad = ctx.createRadialGradient(sweepX, headY, 0, sweepX, headY, spotRadius);
+      grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+      grad.addColorStop(0.35, 'rgba(248, 113, 113, 0.9)');
+      grad.addColorStop(0.7, 'rgba(220, 38, 38, 0.4)');
+      grad.addColorStop(1, 'rgba(220, 38, 38, 0)');
 
-    var grad = ctx.createRadialGradient(sweepX, headY, 0, sweepX, headY, spotRadius);
-    grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
-    grad.addColorStop(0.35, 'rgba(248, 113, 113, 0.9)');
-    grad.addColorStop(0.7, 'rgba(220, 38, 38, 0.4)');
-    grad.addColorStop(1, 'rgba(220, 38, 38, 0)');
-
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.arc(sweepX, headY, spotRadius, 0, Math.PI * 2);
-    ctx.fill();
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(sweepX, headY, spotRadius, 0, Math.PI * 2);
+      ctx.fill();
+    }
 
     ecgRaf = requestAnimationFrame(renderEcgLoop);
   }
